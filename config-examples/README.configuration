@@ -1,0 +1,28 @@
+Configuration file format:
+
+The configuration file format is based around '=', anything to the left of an
+equals char = is considered a parameter name, and anything to the right is
+considered the value.
+
+This means fancy layout and comments are allowed, as long as they are NOT
+adjacent to an equals sign.
+
+Some parameters can be omitted, and default values will be put in place.
+
+There is no documentation besides the example config files, which should be
+self explanitory...
+
+Contents:
+
+aldl.conf - The root config file.  This specifies the path and name of all of
+            the other configuration files, what plugins are loaded by default,
+            etc.
+
+aldl-disconnected.sh,
+aldl-connected.sh - If the remote plugin is loaded, these scrips are executed
+                    when connected or disconnected states are entered.
+
+lt1.conf - The stock aldl definition file, specifies communication methods and
+           strings, as well as the available variables and how to convert them.
+
+The other configuration files are plugin-specific.

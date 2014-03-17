@@ -28,7 +28,7 @@ install: aldl-ftdi aldl-dummy
 	mkdir -pv $(CONFIGDIR)
 	mkdir -pv $(LOGDIR)
 	@echo 'Copying example configs, will not overwrite...'
-	cp -nv ./examples/* $(CONFIGDIR)/
+	cp -nv ./config-examples/* $(CONFIGDIR)/
 	@echo
 	@echo '*******************************************************'
 	@echo ' No automatic updates of configs are done.  Please see'
@@ -49,7 +49,7 @@ aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
 	@echo
 	@echo '***************************************************'
 	@echo ' You must blacklist or rmmod the ftdi_sio driver!!'
-	@echo ' Debian users can try the script in extras/ '
+	@echo ' Debian users can try the debian-config.sh script. '
 	@echo '***************************************************'
 	@echo
 
