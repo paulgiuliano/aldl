@@ -11,6 +11,9 @@
 
 #define MAX_PARAMETERS 65535
 
+/* enables super verbose output of every loaded config option, etc. */
+#undef DEBUGCONFIG
+
 /* a struture with array index matched parameters and values from a cfg file */
 typedef struct _dfile_t {
   unsigned int n; /* number of parameters */

@@ -23,6 +23,10 @@
 
 /* ----------- DEBUG OUTPUT --------------------------*/
 
+/* the debug master switch, enables all available debugging and verbosity
+   routines.  or, undef this and set individual options below... */
+#define DEBUGMASTER
+
 /* enable some checks for retarded values being passed to things */
 #undef RETARDED
 
@@ -31,9 +35,6 @@
 
 /* debug structural functions, such as record link list management */
 #undef DEBUGSTRUCT
-
-/* debug configuration file loading */
-#undef DEBUGCONFIG
 
 /* print debugging info for memory */
 #undef DEBUGMEM
@@ -47,6 +48,17 @@
 
 /* verbose networking */
 #define NET_VERBOSE
+
+#ifdef DEBUGMASTER
+  #define NET_VERBOSE
+  #define ALDL_VERBOSE
+  #define SERIAL_VERBOSE
+  #define SERIAL_SUPERVERBOSE
+  #define DEBUGMEM
+  #define RETARDED
+  #define VERBLOSITY
+  #define DEBUGSTRUCT
+#endif
 
 /* --------- GLOBAL FEATURE CONFIG -----------------*/
 
