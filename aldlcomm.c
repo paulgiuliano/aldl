@@ -188,7 +188,7 @@ int listen_bytes(byte *str, int len, int max, int timeout) {
     commbuf = realloc(commbuf,sizeof(byte) * max);
     #ifdef DEBUGMEM
     nonfatalerror(ERROR_MEMORY,"skip_bytes %i required emergency realloc\n",
-                                bytes);
+                                max);
     #endif
   };
   int chars_read = 0; /* total chars read into buffer */
