@@ -17,6 +17,15 @@ EE mask LT1 ecms.
 * fast and easy automatic datalogging to csv format
 * simple ncurses interface for raspberry pi based dashboard
 
+## status
+
+the system is in daily real-world use on a test vehicle, performing full time
+datalogging and display.  the goals above have all been met, and now optimization
+and testing on other ecm platforms is required.
+
+an averaging datalog analyzer is included to make logical use of massive amounts
+of log data to do timing and AFR adjustments.
+
 ## instructions
 
 to build and run it, you'll need to:
