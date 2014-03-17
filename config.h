@@ -4,9 +4,16 @@
   Static #define's that apply to the entire program.
 ****************************************************/
 
+/* ----------- NOTES ----------------------------------*/
+
+/* An effort has been made to keep nearly all static configuration in this
+   file, however there are some exceptions, see useful.h for some other
+   constants and defines... */
+
 /* ----------- FILE CONFIG ----------------------------*/
 
 /* path to the root config file */
+/* TODO need to make an override on command line option in main.c */
 #define ROOT_CONFIG_FILE "/etc/aldl/aldl.conf"
 
 /* this compacts the configuration data after parsing it.  there should be no
