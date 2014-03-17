@@ -1,4 +1,4 @@
-#define VERSION "ALDL-IO v0.8b"
+#define VERSION "ALDL-IO v0.8c"
 
 /************ SCOPE *********************************
   Static #define's that apply to the entire program.
