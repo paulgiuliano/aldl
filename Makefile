@@ -30,15 +30,17 @@ install: aldl-ftdi aldl-dummy
 	@echo 'Copying example configs, will not overwrite...'
 	cp -nv ./examples/* $(CONFIGDIR)/
 	@echo
-	@echo '******* CONFIG WARNING ********'
-	@echo no automatic updates of configs are done.  please see
-	@echo examples/ if this was an existing installation, and
-	@echo attempt to merge these changes manually...
+	@echo '*******************************************************'
+	@echo ' No automatic updates of configs are done.  Please see'
+	@echo ' examples/ if this was an existing installation, and'
+	@echo ' attempt to merge these changes manually...'
+	@echo '*******************************************************'
 	@echo
-	@echo '******* LOG DIRECTORY WARNING *******'
-	@echo the default log directory is /var/log/aldl, you must make that
-	@echo directory and make it user writeable, or change the path in the
-	@echo config....
+	@echo '****************************************************************'
+	@echo ' The default log directory is /var/log/aldl, if you are running'
+	@echo ' this program as a regular user, you must change permissions on'
+	@echo ' that directory...'
+	@echo '****************************************************************'
 	@echo
 	@echo Install complete, see configs in $(CONFIGDIR) before running
 
