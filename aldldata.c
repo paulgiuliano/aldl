@@ -231,7 +231,7 @@ aldl_state_t get_connstate(aldl_conf_t *aldl) {
 void set_connstate(aldl_state_t s, aldl_conf_t *aldl) {
   set_lock(LOCK_CONNSTATE);
   #ifdef DEBUGSTRUCT
-  printf("set connection state to %i\n",s);
+  printf("set connection state to %i (%s)\n",s,get_state_string(s));
   #endif
   aldl->state = s;
   unset_lock(LOCK_CONNSTATE);
