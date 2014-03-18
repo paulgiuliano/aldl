@@ -9,13 +9,13 @@
 #include "error.h"
 #include "loadconfig.h"
 
+/* This is a stripped down and portable version of ../loadconfig.c,
+   it may be a bit further behind, though. */
+
 /* -- LOCAL FUNCTIONS -- */
 
 /* is a char whitespace ...? */
 inline int is_whitespace(char ch);
-
-/* copy data contained in field f of d to dst, delimted by start and end */
-char *brk_field(char *dst, int f, char *in);
 
 char *dconfig(char *buf, char *parameter, int n);
 
@@ -128,6 +128,7 @@ dfile_t *dfile(char *data) {
         if(*cx == '"') { /* skip quoted string */
           cx++;
           while(cx[0] != '"') {
+            if(cx[1] == 0) err("Unterminated quote in config");
             if(cx == data + len) continue;
             cx++;
           };
@@ -141,7 +142,9 @@ dfile_t *dfile(char *data) {
       while(is_whitespace(*cx) != 1) {
         if(*cx == '"') { /* skip quoted string */
           cx--;
+          if(cx < data) err("Unterminated quote in config");
           while(cx[0] != '"') {
+            if(cx == data) err("Unterminated quote in config");
             if(cx == data + len) continue;
             cx--;
           };
@@ -195,28 +198,6 @@ char *dfile_shrink(dfile_t *d) {
 inline int is_whitespace(char ch) {
   if(ch == 0 || ch == ' ' || ch == '\n') return 1;
   return 0;
-};
-
-char *brk_field(char *dst, int f, char *in) {
-  if(dst == NULL || in == NULL) return NULL;
-  char *start = in;
-  int x = 0;
-  if(f != 0) { /* not first field */
-    for(x=0;x<f;x++) {
-      while(start[0] != ',') {
-        start++;
-        if(start[0] == 0 && x < f) return NULL;
-      };
-      start++;
-    };
-  };
-  strcpy(dst,start);
-  /* just terminate the end */
-  char *end = dst;
-  end++;
-  while(end[0] != ',' && end[0] != 0) end++;
-  end[0] = 0;
-  return dst;
 };
 
 char *load_file(char *filename) {
