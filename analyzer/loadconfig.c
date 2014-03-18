@@ -207,11 +207,18 @@ char *load_file(char *filename) {
   if(fdesc == NULL) return NULL;
   fseek(fdesc, 0L, SEEK_END);
   int flength = ftell(fdesc);
-  if(flength == -1) return NULL;
+  if(flength == -1) {
+    fclose(fdesc);
+    return NULL;
+  };
   rewind(fdesc);
   char *buf = malloc(sizeof(char) * ( flength + 1));
-  if(buf == NULL) return NULL; /* file too big for memory */
-  if(fread(buf,1,flength,fdesc) != flength) return NULL;
+  /* if file too big for memory, or malloc failed */
+  if(buf == NULL || fread(buf,1,flength,fdesc) != flength) {
+    free(buf);
+    fclose(fdesc);
+    return NULL;
+  };
   fclose(fdesc);
   buf[flength] = 0;
   return buf;

@@ -511,10 +511,17 @@ char *load_file(char *filename) {
   if(fdesc == NULL) return NULL;
   fseek(fdesc, 0L, SEEK_END);
   int flength = ftell(fdesc);
-  if(flength == -1) return NULL;
+  if(flength == -1) {
+    fclose(fdesc);
+    return NULL;
+  };
   rewind(fdesc);
   char *buf = smalloc(sizeof(char) * ( flength + 1));
-  if(fread(buf,1,flength,fdesc) != flength) return NULL;
+  if(fread(buf,1,flength,fdesc) != flength) {
+    free(buf);
+    fclose(fdesc);
+    return NULL;
+  };
   fclose(fdesc);
   buf[flength] = 0;
   return buf;
