@@ -36,7 +36,7 @@ typedef unsigned char byte;
 
 typedef union aldl_data {
   float f;
-  int i;
+  int i;      /* booleans will be stored here too ... */
 } aldl_data_t;
 
 /* each data record will be associated with a static definition.  this will
@@ -53,13 +53,13 @@ typedef struct aldl_define {
   aldl_data_t alarm_low, alarm_high; /* value for alarms */
   /* ----- output definition -------------------------- */
   aldl_datatype_t type; /* the OUTPUT type */
-  char *uom;     /* unit of measure */
+  char *uom;            /* unit of measure string */
   byte precision;       /* floating point display precision.  not used in
                            conversion; only for display plugins. */
   aldl_data_t min, max;  /* the low and high range of OUTPUT value */
   /* ----- conversion ----------------------------------*/
-  aldl_data_t adder;          /*  ... */
-  aldl_data_t multiplier;     /*  ... */
+  aldl_data_t adder;         /* forms a linear equation, such as */ 
+  aldl_data_t multiplier;    /* MULTIPLIER(n)+ADDER */ 
   /* ----- input definition --------------------------- */
   byte packet; /* selects which packet unique id the data comes from */
   byte offset; /* offset within packet in bytes */
@@ -67,7 +67,7 @@ typedef struct aldl_define {
   /* binary stuff only */
   byte binary; /* offset in bits.  only works for 1 bit fields */
   byte invert; /* invert (0 means no) */
-  byte err; /* is an error code */
+  byte err;    /* is an error code */
 } aldl_define_t;
 
 /* definition of a record, which is a sequential linked-list type structure,
@@ -78,18 +78,18 @@ typedef struct aldl_record {
      necessarily be thread-safe ... there are functions for that. */
   struct aldl_record *next; /* linked list traversal, newer record or NULL */
   struct aldl_record *prev; /* linked list traversal, older record or NULL */
-  unsigned long t;            /* timestamp of the record */
-  aldl_data_t *data;   /* pointer to the first data record. */
+  unsigned long t;          /* timestamp of the record */
+  aldl_data_t *data;        /* pointer to the first data record. */
 } aldl_record_t;
 
 /* defines each packet of data and how to retrieve it */
 
 typedef struct aldl_packetdef {
-  byte id;         /* message number */
+  byte id;        /* message number */
   int length;     /* how long the packet is, overall, including the header */
   byte *command;  /* the command string sent to retrieve the packet */
-  int offset;        /* the offset of the data in bytes, aka header size */
-  int frequency;    /* retrieval frequency, or 0 to disable packet */
+  int offset;     /* the offset of the data in bytes, aka header size */
+  int frequency;  /* retrieval frequency, or 0 to disable packet */
   byte *data;     /* pointer to the raw data buffer */
 } aldl_packetdef_t;
 
@@ -97,21 +97,18 @@ typedef struct aldl_packetdef {
 
 typedef struct aldl_commdef {
   /* ------- config stuff ---------------- */
-  int checksum_enable:1;    /* set to 1 to enable checksum verification of
-                              packet data. */
-  byte pcm_address;        /* the address of the PCM */
+  int checksum_enable:1;   /* set to 1 to enable checksum verification */
+  byte pcm_address;        /* the address byte of the PCM */
   /* ------- idle traffic stuff ---------- */
-  int chatterwait;        /* 1 enables chatter checking.  if this is
-                              disabled, it'll immediately and constanty
-                              send shutup requests. */
-  int idledelay;           /* a ms delay at the end of idle traffic, before
-                              sending shutup requests, or 0 */
+  int chatterwait;         /* 1 enables chatter checking.  if set, it'll wait
+                              for a byte before attempting to connect */
+  int idledelay;           /* a ms delay at the end of idle traffic */
   /* ------- shutup related stuff -------- */
   byte *shutupcommand;     /* the shutup (disable comms) command */
   int shutuprepeat;        /* how many times to repeat a shutup request */
   int shutuprepeatdelay;   /* the delay, in ms, to delay in between requests */
   byte *returncommand;     /* the "return to normal" command */
-  int shutup_time; /* time in ms that a shutup state lasts */
+  int shutup_time;         /* time in ms that a shutup state lasts */
   /* ------- data packet requests -------- */
   int n_packets;             /* the number of packets of data */
   aldl_packetdef_t *packet;  /* the actual packet definitions */
@@ -119,12 +116,12 @@ typedef struct aldl_commdef {
 } aldl_commdef_t;
 
 typedef struct aldl_stats {
-  unsigned int packetchecksumfail; /* packets that failed checksum */
-  unsigned int packetheaderfail; /* packets that had a bunk header */
-  unsigned int packetrecvtimeout; /* packet too slow, had to retry */
+  unsigned int packetchecksumfail;  /* packets that failed checksum */
+  unsigned int packetheaderfail;    /* packets that had a bunk header */
+  unsigned int packetrecvtimeout;   /* packet too slow, had to retry */
   unsigned int failcounter; /* this counts number of failed pkts in a row,
                                not the total amount of failures! */
-  float packetspersecond; /* this must be enabled with TRACK_PKTRATE */
+  float packetspersecond;   /* this must be enabled with TRACK_PKTRATE */
 } aldl_stats_t;
 
 /* an info structure defining aldl communications and data mgmt */
@@ -135,23 +132,27 @@ typedef struct aldl_conf {
   int n_defs;   /* number of definitions */
   int bufsize;  /* the minimum number of records to maintain */
   int bufstart; /* start plugins when this many records are present */
-  int rate;    /* slow down data collection, in microseconds. */
-  int maxfail; /* maximum packet retrieve fails before it's assumed that the
-                  connection is no longer synchronized */
-  int minmax;  /* enforce min/max values during conversion */
+  int rate;     /* slow down data collection, in microseconds. */
+  int maxfail;  /* maximum packet retrieve fails before it's assumed that the
+                   connection is no longer stable */
+  int minmax;   /* enforce min/max values during conversion */
   /* plugin enables -------*/
-  int consoleif_enable, datalogger_enable, dataserver_enable, remote_enable;
-  char *datalogger_config; /* path to datalogger config file */
-  char *consoleif_config;  /* path to consoleif config file */
-  char *dataserver_config; /* path to dataserver conf file */
+  int consoleif_enable;
+  int datalogger_enable;
+  int dataserver_enable;
+  int remote_enable;
+  /* config files -------- */
+  char *datalogger_config;   /* path to datalogger config file */
+  char *consoleif_config;    /* path to consoleif config file */
+  char *dataserver_config;   /* path to dataserver conf file */
   /* structures -----------*/
-  aldl_state_t state; /* connection state, do not touch */
-  aldl_define_t *def; /* link to the definition set */
-  aldl_record_t *r; /* link to the latest record */
+  aldl_state_t state;   /* connection state, do not touch */
+  aldl_define_t *def;   /* link to the definition set */
+  aldl_record_t *r;     /* link to the latest record */
   aldl_commdef_t *comm; /* link back to the communication spec */
-  aldl_stats_t *stats;   /* statistics */
-  time_t uptime;   /* time stamp for acq loop */
-  int ready; /* mark this flag when the buffer is full enough */
+  aldl_stats_t *stats;  /* statistics */
+  time_t uptime;        /* time stamp for acq loop */
+  int ready;            /* mark this flag when the buffer is full enough */
 } aldl_conf_t;
 
 #endif
