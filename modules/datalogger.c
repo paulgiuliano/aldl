@@ -129,6 +129,7 @@ void *datalogger_init(void *aldl_in) {
   };
 
   fclose(conf->fdesc);
+  free(conf);
   /* end ... */
   return NULL;
 };
