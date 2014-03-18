@@ -27,7 +27,6 @@ typedef struct _aldl_threads_t {
   pthread_t acq;
   pthread_t consoleif;
   pthread_t datalogger;
-  pthread_t dataserver;
   pthread_t remote;
 } aldl_threads_t;
 
@@ -89,8 +88,6 @@ void parse_cmdline(int argc, char **argv, aldl_conf_t *aldl) {
       aldl->consoleif_enable = 1;
     } else if(faststrcmp(argv[n_arg],"datalogger") == 1) {
       aldl->datalogger_enable = 1;
-    } else if(faststrcmp(argv[n_arg],"dataserver") == 1) {
-      aldl->dataserver_enable = 1;
     } else if(faststrcmp(argv[n_arg],"remote") == 1) {
       aldl->remote_enable = 1;
     } else {
@@ -103,8 +100,7 @@ void modules_verify(aldl_conf_t *aldl) {
   /* compatibility checking */
   /* dont specify remote here, as remote by itself isn't enough ... */
   if(aldl->consoleif_enable == 0 &&
-     aldl->datalogger_enable == 0 &&
-     aldl->dataserver_enable == 0) {
+     aldl->datalogger_enable == 0) {
     fatalerror(ERROR_PLUGIN,"no plugins are enabled");
   };
 }
@@ -118,11 +114,6 @@ void modules_start(aldl_threads_t *thread, aldl_conf_t *aldl) {
   if(aldl->datalogger_enable == 1) {
     pthread_create(&thread->datalogger,NULL,
                    datalogger_init,(void *) aldl);
-  };
-
-  if(aldl->dataserver_enable == 1) {
-    pthread_create(&thread->dataserver,NULL,
-                    dataserver_init,(void *) aldl);
   };
 
   if(aldl->remote_enable == 1) {
