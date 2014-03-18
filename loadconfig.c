@@ -29,9 +29,6 @@ aldl_commdef_t *comm; /* comm specs */
 /* is a char whitespace ...? */
 inline int is_whitespace(char ch);
 
-/* copy data contained in field f of d to dst, delimted by start and end */
-char *brk_field(char *dst, int f, char *in);
-
 /* following functions use internally stored config and should never be
    exported ... */
 
@@ -504,28 +501,6 @@ char *dfile_shrink(dfile_t *d) {
 inline int is_whitespace(char ch) {
   if(ch == 0 || ch == ' ' || ch == '\n' || ch == '=') return 1;
   return 0;
-};
-
-char *brk_field(char *dst, int f, char *in) {
-  if(dst == NULL || in == NULL) return NULL;
-  char *start = in;
-  int x = 0;
-  if(f != 0) { /* not first field */
-    for(x=0;x<f;x++) {
-      while(start[0] != ',') {
-        start++;
-        if(start[0] == 0 && x < f) return NULL;
-      };
-      start++;
-    };
-  };
-  strcpy(dst,start);
-  /* just terminate the end */
-  char *end = dst;
-  end++;
-  while(end[0] != ',' && end[0] != 0) end++;
-  end[0] = 0;
-  return dst;
 };
 
 /* read file into memory */
