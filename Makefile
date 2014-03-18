@@ -10,9 +10,9 @@ LOGDIR= /var/log/aldl
 BINDIR= /usr/local/bin
 BINARIES= aldl-ftdi aldl-dummy
 
-.PHONY: clean install stats _modules
+.PHONY: clean install stats modules_
 
-all: aldl-ftdi aldl-dummy
+all: aldl-ftdi aldl-dummy analyzer_
 	@echo
 	@echo '*********************************************************'
 	@echo ' Run the following as root to install the binaries and'
@@ -20,7 +20,7 @@ all: aldl-ftdi aldl-dummy
 	@echo '*********************************************************'
 	@echo
 
-install: aldl-ftdi aldl-dummy
+install: aldl-ftdi aldl-dummy analyzer_
 	@echo Installing to $(BINDIR)
 	cp -fv $(BINARIES) $(BINDIR)/
 	ln -sf $(BINDIR)/aldl-ftdi $(BINDIR)/aldl
@@ -29,6 +29,8 @@ install: aldl-ftdi aldl-dummy
 	mkdir -pv $(LOGDIR)
 	@echo 'Copying example configs, will not overwrite...'
 	cp -nv ./config-examples/* $(CONFIGDIR)/
+	@echo 'Installing optional analyzer...'
+	cd analyzer ; make install ; cd ..
 	@echo
 	@echo '*******************************************************'
 	@echo ' No automatic updates of configs are done.  Please see'
@@ -71,6 +73,9 @@ error.o: error.c error.h config.h aldl-types.h
 modules_:
 	cd modules ; make ; cd ..
 
+analyzer_:
+	cd analyzer ; make ; cd ..
+
 serio-ftdi.o: serio-ftdi.c aldl-io.h aldl-types.h config.h
 	gcc $(CFLAGS) -c serio-ftdi.c -o serio-ftdi.o
 
@@ -86,6 +91,7 @@ aldldata.o: aldl-io.h aldl-types.h aldldata.c aldlcomm.o config.h
 clean:
 	rm -fv *.o *.a aldl-ftdi aldl-dummy
 	cd modules ; make clean ; cd ..
+	cd analyzer ; make clean ; cd ..
 
 stats:
 	wc -l *.c *.h */*.c */*.h
