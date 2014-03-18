@@ -62,9 +62,6 @@ char *bigbuf; /* a large temporary string construction buffer */
 
 aldl_record_t *rec; /* current record */
 
-#define N_GEARS 6
-float geartable[N_GEARS];
-
 /* --- local functions ------------------------*/
 
 consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl);
@@ -424,15 +421,6 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
       gauge->gaugetype = GAUGE_BIN;
     } else if(faststrcmp(gtypestr,"ERRSTR") == 1) {
       gauge->gaugetype = GAUGE_ERRSTR;
-    } else if(faststrcmp(gtypestr,"SHIFT") == 1) {
-      gauge->gaugetype = GAUGE_SHIFT;
-      int gear = 1;
-      char *gearstring = malloc(20);
-      for(gear=1;gear<=N_GEARS;gear++) {
-        sprintf(gearstring,"GEAR%i",gear);
-        geartable[gear] = configopt_float_fatal(config,gearstring);
-      };
-      free(gearstring);
     } else {
       fatalerror(ERROR_CONFIG,"consoleif: gauge %i bad type %s",n,gtypestr);
     };
