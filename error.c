@@ -52,7 +52,9 @@ void error(errtype_t t, error_t code, char *str, ...) {
   #endif
 };
 
+#ifdef RETARDED
 void retardptr(void *p, char *note) {
   error(1,ERROR_RETARD,"null pointer in %s");
 };
+#endif
 
