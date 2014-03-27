@@ -4,6 +4,9 @@ this is a program designed to manage aldl datastreams from the 8192 baud series
 of OBD-I GM ECMs under gnu/linux based operating systems, but best tested with
 EE mask LT1 ecms.
 
+see http://fbodytech.com/ for a more detailed installation tutorial, including
+some raspberry pi based instructions.
+
 ## goals
 
 * adaptable to any ecm that adheres to the standard 8192 baud aldl protocol
@@ -24,7 +27,8 @@ datalogging and display.  the goals above have all been met, and now optimizatio
 and testing on other ecm platforms is required.
 
 an averaging datalog analyzer is included to make logical use of massive amounts
-of log data to do timing and AFR adjustments.
+of log data to do timing and AFR adjustments, but it may only be useful on an
+LT1...
 
 ## instructions
 
@@ -39,18 +43,14 @@ if you run debian/ubuntu/whatever, then: apt-get install ncurses-dev libftdi-dev
 this removes the the in-kernel ftdi driver.  this program uses libftdi for raw
 access to the usb-serial adaptor, and will not work while ftdi_sio is loaded.
 
-there is a script in extras/ that might help with debian-like systems
+there is a script included that might help with debian-like systems.
 
 * make sure your user has permissions to read/write usb devices.
 
 * configuration.  see below.
 
-* run it! './aldl-ftdi'
-
-by default, it only uses the ncurses display interface. the default modules
-that run are also specified in aldl.conf.
-
-if you want the datalogger and the display interface: ./aldl-ftdi datalogger
+* run it! './aldl-ftdi'.  this only runs the plugins enabled in the root
+  config...
 
 ## configuration
 
@@ -82,6 +82,3 @@ PORT=i:0x424:0xEC00 (preferred)
 PORT=D:001/003
 
 check out config.h before compile if you're interested in 'tweaking' anything.
-
-see http://fbodytech.com/ for a more detailed installation tutorial, including
-some raspberry pi based instructions.
