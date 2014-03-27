@@ -7,6 +7,11 @@
 
 #define N_ERRORCODES 13
 
+typedef enum _errtype {
+  EFATAL=1,
+  ENOTICE=0
+} errtype_t;
+
 typedef enum _error {
   ERROR_GENERAL=0,
   ERROR_NULL=1,
@@ -26,7 +31,7 @@ typedef enum _error {
 /* main error handler.  fatal=1 to force exit on error, otherwise the error
    is non-fatal... */
 
-void error(int fatal,error_t code, char *str, ...);
+void error(errtype_t t,error_t code, char *str, ...);
 
 /* retard check for a null pointer passed to a function where it shouldn't be */
 void retardptr(void *p, char *note);

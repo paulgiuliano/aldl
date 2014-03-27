@@ -31,7 +31,7 @@ char errstr[N_ERRORCODES][24] = {
 "RETARD"
 };
 
-void error(int fatal,error_t code, char *str, ...) {
+void error(errtype_t t, error_t code, char *str, ...) {
   va_list arg;
   fprintf(stderr,"ALDL-IO ERROR!!\n");
   fprintf(stderr,"%s ERROR (%i)\n",errstr[code],code);
@@ -43,7 +43,7 @@ void error(int fatal,error_t code, char *str, ...) {
     fprintf(stderr,"\n");
   };
   #ifndef ALL_ERRORS_FATAL
-  if(fatal == 1) {
+  if(t == EFATAL) {
   #endif
     fprintf(stderr,"This error is fatal.  Exiting...\n");
     main_exit();
