@@ -107,7 +107,7 @@ void *consoleif_init(void *aldl_in) {
   /* initialize root window */
   WINDOW *root;
   if((root = initscr()) == NULL) {
-    fatalerror(ERROR_NULL,"could not init ncurses");
+    error(1,ERROR_NULL,"could not init ncurses");
   };
 
   curs_set(0);
@@ -372,10 +372,10 @@ void gauge_blank(gauge_t *g) {
 
 consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
   consoleif_conf_t *conf = malloc(sizeof(consoleif_conf_t));
-  if(aldl->consoleif_config == NULL) fatalerror(ERROR_CONFIG,
+  if(aldl->consoleif_config == NULL) error(1,ERROR_CONFIG,
                        "no consoleif config specified");
   conf->dconf = dfile_load(aldl->consoleif_config);
-  if(conf->dconf == NULL) fatalerror(ERROR_CONFIG,
+  if(conf->dconf == NULL) error(1,ERROR_CONFIG,
                        "consoleif config file missing");
   dfile_t *config = conf->dconf;
   /* GLOBAL OPTIONS */
@@ -392,10 +392,10 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
     idstring = configopt(config,gconfig("A_NAME",n),NULL);
     if(idstring != NULL) { /* A_NAME is present */
       gauge->data_a = get_index_by_name(aldl,idstring);
-      if(gauge->data_a == -1) fatalerror(ERROR_CONFIG,
+      if(gauge->data_a == -1) error(1,ERROR_CONFIG,
                          "consoleif: gauge %i invalid name %s",n,idstring);
     } else {
-      fatalerror(ERROR_CONFIG,"consoleif: name missing from %i",n);
+      error(1,ERROR_CONFIG,"consoleif: name missing from %i",n);
     };
     gauge->x = configopt_int_fatal(config,gconfig("X",n),0,10000);
     gauge->y = configopt_int_fatal(config,gconfig("Y",n),0,10000);
@@ -405,7 +405,7 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
     gauge->top = configopt_float(config,gconfig("MAX",n),65535);
     gauge->smoothing = configopt_int(config,gconfig("SMOOTHING",n),0,1000,0);
     if(gauge->smoothing > aldl->bufstart - 1) {
-      fatalerror(ERROR_BUFFER,"gauge %i has its smoothing setting too high\n\
+      error(1,ERROR_BUFFER,"gauge %i has its smoothing setting too high\n\
                   gauge smoothing %i, but prebuffer is %i\n\
               please decrease smoothing or increase prebuffer.",
                  n,gauge->smoothing,aldl->bufstart);
@@ -422,7 +422,7 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
     } else if(faststrcmp(gtypestr,"ERRSTR") == 1) {
       gauge->gaugetype = GAUGE_ERRSTR;
     } else {
-      fatalerror(ERROR_CONFIG,"consoleif: gauge %i bad type %s",n,gtypestr);
+      error(1,ERROR_CONFIG,"consoleif: gauge %i bad type %s",n,gtypestr);
     };
   };
   return conf;
@@ -441,7 +441,7 @@ float smooth_float(gauge_t *g) {
   for(x=0;x<=g->smoothing;x++) {
     avg += r->data[g->data_a].f; 
     if(r->prev == NULL) { /* attempt to trap underrun (might not work) */
-      fatalerror(ERROR_BUFFER,"buffer underrun caught in %s gauge\n\
+      error(1,ERROR_BUFFER,"buffer underrun caught in %s gauge\n\
            %i smoothing w/ %i total buffer, and %i prebuffer.\n\
             please decrease smoothing or increase prebuffer settings!!",
          aldl->def[g->data_a].name,g->smoothing,aldl->bufsize,aldl->bufstart);

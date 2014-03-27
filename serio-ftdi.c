@@ -73,7 +73,7 @@ int serial_init(char *port) {
 
   /* new ftdi instance */
   if((ftdi = ftdi_new()) == NULL) {
-    fatalerror(ERROR_FTDI,"ftdi_new failed");
+    error(1,ERROR_FTDI,"ftdi_new failed");
   };
   
   res = ftdi_usb_open_string(ftdi,port);
@@ -170,7 +170,7 @@ int serial_read(byte *str, int len) {
 
 inline void ftdifatal(int loc,int errno) {
   if(ftdierror(loc,errno) > 0) {
-    fatalerror(ERROR_FTDI,"*** See above FTDI DRIVER error message @ stderr");
+    error(1,ERROR_FTDI,"*** See above FTDI DRIVER error message @ stderr");
   };
 };
 
@@ -179,7 +179,7 @@ inline int ftdierror(int loc,int errno) {
     return 0;
   } else {
     #ifdef SERIAL_VERBOSE
-    fprintf(stderr,"FTDI DRIVER: %i, %s\n",errno,ftdi_get_error_string(ftdi));
+    error(0,stderr,"FTDI DRIVER: %i, %s\n",errno,ftdi_get_error_string(ftdi));
     #endif
     return 1;
   };
@@ -216,7 +216,7 @@ void serial_help_devs() {
   struct ftdi_device_list *devlist, *curdev;
   char mfr[128], desc[128];
 
-  if((ftdi = ftdi_new()) == NULL) fatalerror(ERROR_FTDI,"ftdi_new failed");
+  if((ftdi = ftdi_new()) == NULL) error(1,ERROR_FTDI,"ftdi_new failed");
 
   ret = ftdi_usb_find_all(ftdi, &devlist, 0x0403, 0x6001);
   ftdifatal(99,ret);

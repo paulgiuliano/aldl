@@ -91,7 +91,7 @@ void parse_cmdline(int argc, char **argv, aldl_conf_t *aldl) {
     } else if(faststrcmp(argv[n_arg],"remote") == 1) {
       aldl->remote_enable = 1;
     } else {
-      fatalerror(ERROR_NULL,"Option %s not recognized",argv[n_arg]);
+      error(1,ERROR_NULL,"Option %s not recognized",argv[n_arg]);
     };
   };
 }
@@ -101,7 +101,7 @@ void modules_verify(aldl_conf_t *aldl) {
   /* dont specify remote here, as remote by itself isn't enough ... */
   if(aldl->consoleif_enable == 0 &&
      aldl->datalogger_enable == 0) {
-    fatalerror(ERROR_PLUGIN,"no plugins are enabled");
+    error(1,ERROR_PLUGIN,"no plugins are enabled");
   };
 }
 
@@ -163,11 +163,11 @@ void aldl_sanity_check(aldl_conf_t *aldl) {
         break;
       };
     };
-    if(pkt == NULL) fatalerror(ERROR_RANGE,"invalid packet specified");
+    if(pkt == NULL) error(1,ERROR_RANGE,"invalid packet specified");
 
     /* check range */
     if(pkt->offset + def->offset > pkt->length) {
-      fatalerror(ERROR_RANGE,"definition out of packet range");
+      error(1,ERROR_RANGE,"definition out of packet range");
     };
   };
 };

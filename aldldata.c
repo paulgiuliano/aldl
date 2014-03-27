@@ -68,7 +68,7 @@ void init_locks() {
   aldllock = smalloc(sizeof(pthread_mutex_t) * N_LOCKS); 
   for(x=0;x<N_LOCKS;x++) {
     pthreaderr = pthread_mutex_init(&aldllock[x],NULL); 
-    if(pthreaderr != 0) fatalerror(ERROR_LOCK,
+    if(pthreaderr != 0) error(1,ERROR_LOCK,
          "error initializing lock %i, pthread error %i",x,pthreaderr);
   };
 };
@@ -76,14 +76,14 @@ void init_locks() {
 inline void set_lock(aldl_lock_t lock_number) {
   int rtval;
   rtval = pthread_mutex_lock(&aldllock[lock_number]);
-  if(rtval != 0) fatalerror(ERROR_LOCK,
+  if(rtval != 0) error(1,ERROR_LOCK,
           "error setting lock %i, pthread error code %i",lock_number,rtval);
 };
 
 inline void unset_lock(aldl_lock_t lock_number) {
   int rtval;
   rtval = pthread_mutex_unlock(&aldllock[lock_number]);
-  if(rtval != 0) fatalerror(ERROR_LOCK,
+  if(rtval != 0) error(1,ERROR_LOCK,
           "error unsetting lock %i, pthread error code %i",lock_number,rtval);
 };
 
@@ -156,7 +156,7 @@ aldl_record_t *aldl_fill_record(aldl_conf_t *aldl, aldl_record_t *rec) {
 
 aldl_data_t *aldl_parse_def(aldl_conf_t *aldl, aldl_record_t *r, int n) {
   /* check for out of range */
-  if(n < 0 || n > aldl->n_defs - 1) fatalerror(ERROR_RANGE,
+  if(n < 0 || n > aldl->n_defs - 1) error(1,ERROR_RANGE,
                                     "def number %i is out of range",n); 
 
   aldl_define_t *def = &aldl->def[n]; /* shortcut to definition */
@@ -215,7 +215,7 @@ aldl_data_t *aldl_parse_def(aldl_conf_t *aldl, aldl_record_t *r, int n) {
       };
       break;
     default:
-      fatalerror(ERROR_RANGE,"invalid type spec: %i",def->type);
+      error(1,ERROR_RANGE,"invalid type spec: %i",def->type);
   };
 
   return out;
@@ -289,7 +289,7 @@ aldl_record_t *next_record(aldl_record_t *rec) {
   #ifdef DEBUGSTRUCT
   /* check for underrun ... */
   if(rec->prev == NULL) {
-     fatalerror(ERROR_BUFFER,"underrun in record retrieve %p",rec);
+     error(1,ERROR_BUFFER,"underrun in record retrieve %p",rec);
   };
   #endif
   aldl_record_t *next;

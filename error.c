@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "config.h"
 #include "error.h"
 #include "aldl-io.h"
 
@@ -30,9 +31,10 @@ char errstr[N_ERRORCODES][24] = {
 "RETARD"
 };
 
-void fatalerror(error_t code, char *str, ...) {
+void error(int fatal,error_t code, char *str, ...) {
   va_list arg;
-  fprintf(stderr,"FATAL: %s ERROR (%i)\n",errstr[code],code);
+  fprintf(stderr,"ALDL-IO ERROR!!\n");
+  fprintf(stderr,"%s ERROR (%i)\n",errstr[code],code);
   if(str != NULL) {
     fprintf(stderr,"NOTES: ");
     va_start(arg,str);
@@ -40,22 +42,17 @@ void fatalerror(error_t code, char *str, ...) {
     va_end(arg);
     fprintf(stderr,"\n");
   };
-  main_exit();
-};
-
-void nonfatalerror(error_t code, char *str, ...) {
-  va_list arg;
-  fprintf(stderr,"ERROR: %s ERROR (%i)\n",errstr[code],code);
-  if(str != NULL) {
-    fprintf(stderr,"NOTES: ");
-    va_start(arg,str);
-    vfprintf(stderr,str,arg);
-    va_end(arg);
-    fprintf(stderr,"\n");
+  #ifndef ALL_ERRORS_FATAL
+  if(fatal == 1) {
+  #endif
+    fprintf(stderr,"This error is fatal.  Exiting...\n");
+    main_exit();
+  #ifndef ALL_ERRORS_FATAL
   };
+  #endif
 };
 
 void retardptr(void *p, char *note) {
-  fatalerror(ERROR_RETARD,"null pointer in %s");
+  error(1,ERROR_RETARD,"null pointer in %s");
 };
 

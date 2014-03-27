@@ -169,9 +169,9 @@ inline int skip_bytes(int bytes, int timeout) {
   if(bytes > ALDL_COMMBUFFER) {
     /* realloc just to save ourselves */
     commbuf = realloc(commbuf,sizeof(byte) * bytes);
-    if(commbuf == NULL) fatalerror(ERROR_MEMORY,"Out of memory @ realloc");
+    if(commbuf == NULL) error(1,ERROR_MEMORY,"Out of memory @ realloc");
     #ifdef DEBUGMEM
-    nonfatalerror(ERROR_MEMORY,"skip_bytes %i required emergency realloc\n",
+    error(0,ERROR_MEMORY,"skip_bytes %i required emergency realloc\n",
                                 bytes);
     #endif
   };
@@ -187,9 +187,9 @@ int listen_bytes(byte *str, int len, int max, int timeout) {
   if(max > ALDL_COMMBUFFER) {
     /* realloc just to save ourselves */
     commbuf = realloc(commbuf,sizeof(byte) * max);
-    if(commbuf == NULL) fatalerror(ERROR_MEMORY,"Out of memory @ realloc");
+    if(commbuf == NULL) error(1,ERROR_MEMORY,"Out of memory @ realloc");
     #ifdef DEBUGMEM
-    nonfatalerror(ERROR_MEMORY,"skip_bytes %i required emergency realloc\n",
+    error(0,ERROR_MEMORY,"skip_bytes %i required emergency realloc\n",
                                 max);
     #endif
   };

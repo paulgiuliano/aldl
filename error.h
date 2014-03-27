@@ -23,8 +23,10 @@ typedef enum _error {
   ERROR_RETARD=12
 } error_t;
 
-void fatalerror(error_t code, char *str, ...);
-void nonfatalerror(error_t code, char *str, ...);
+/* main error handler.  fatal=1 to force exit on error, otherwise the error
+   is non-fatal... */
+
+void error(int fatal,error_t code, char *str, ...);
 
 /* retard check for a null pointer passed to a function where it shouldn't be */
 void retardptr(void *p, char *note);

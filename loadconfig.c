@@ -50,7 +50,7 @@ char *load_config_root(dfile_t *config); /* returns path to sub config */
 aldl_conf_t *aldl_setup() {
   /* load root config file ... */
   dfile_t *config = dfile_load(ROOT_CONFIG_FILE);
-  if(config == NULL) fatalerror(ERROR_CONFIG,
+  if(config == NULL) error(1,ERROR_CONFIG,
                         "cant load root config file: %s", ROOT_CONFIG_FILE);
   #ifdef DEBUGCONFIG
   print_config(config);
@@ -66,7 +66,7 @@ aldl_conf_t *aldl_setup() {
 
   /* load def config file ... */
   config = dfile_load(configfile); /* re-use pointer */
-  if(config == NULL) fatalerror(ERROR_CONFIG,
+  if(config == NULL) error(1,ERROR_CONFIG,
                         "cant load definition file: %s",configfile);
   #ifdef DEBUGCONFIG
   print_config(config);
@@ -110,7 +110,7 @@ void aldl_alloc_a() {
 
   /* stats tracking structure */
   aldl->stats = smalloc(sizeof(aldl_stats_t));
-  if(aldl->stats == NULL) fatalerror(ERROR_MEMORY,"stats alloc");
+  if(aldl->stats == NULL) error(1,ERROR_MEMORY,"stats alloc");
   memset(aldl->stats,0,sizeof(aldl_stats_t));
 
   #ifdef DEBUGMEM
@@ -183,10 +183,10 @@ void load_config_b(dfile_t *config) {
   /* sanity checks for single packet mode */
   #ifndef ALDL_MULTIPACKET
   if(comm->packet[0].frequency == 0) {
-    fatalerror(ERROR_CONFIG,"the only packet is disabled due to 0 frequency");
+    error(1,ERROR_CONFIG,"the only packet is disabled due to 0 frequency");
   };
   if(comm->n_packets != 1) {
-    fatalerror(ERROR_CONFIG,"this config requires a multipacket build");
+    error(1,ERROR_CONFIG,"this config requires a multipacket build");
   };
   #endif
 }
@@ -199,7 +199,7 @@ void aldl_alloc_c() {
     #ifdef DEBUGMEM
     printf("packet %i raw storage: %i bytes\n",x,comm->packet[x].length);
     #endif
-    if(comm->packet[x].data == NULL) fatalerror(ERROR_MEMORY,"pkt data");
+    if(comm->packet[x].data == NULL) error(1,ERROR_MEMORY,"pkt data");
   };
 
   /* storage for data definitions */
@@ -249,14 +249,14 @@ void load_config_c(dfile_t *config) {
         d->alarm_high.i=configopt_int(config,dconfig(configstr,"ALARM_HIGH",x),
                                                   0,32767,0);
       } else {
-        fatalerror(ERROR_CONFIG,"invalid data type %s in def %i",tmp,x);
+        error(1,ERROR_CONFIG,"invalid data type %s in def %i",tmp,x);
       };
       d->uom=configopt(config,dconfig(configstr,"UOM",x),NULL);
       /* check for illegal chars in uom */
       if(d->uom != NULL) {
         f = faststrcmp_list(d->uom, CONFIG_BAD_CHARS);
         if(f != 0) {
-          fatalerror(ERROR_CONFIG,"bad char %c in UOM of def %i",f,x);
+          error(1,ERROR_CONFIG,"bad char %c in UOM of def %i",f,x);
         }
       };
       d->size=configopt_int(config,dconfig(configstr,"SIZE",x),1,32,8);     
@@ -268,16 +268,16 @@ void load_config_c(dfile_t *config) {
                         "ALARM_HIGH_ENABLE",x),0,1,0);
     d->offset=configopt_byte_fatal(config,dconfig(configstr,"OFFSET",x));
     d->packet=configopt_byte(config,dconfig(configstr,"PACKET",x),0x00);
-    if(d->packet > comm->n_packets - 1) fatalerror(ERROR_CONFIG,
+    if(d->packet > comm->n_packets - 1) error(1,ERROR_CONFIG,
                         "packet %i out of range in def %i",d->packet,x);
     d->name=configopt_fatal(config,dconfig(configstr,"NAME",x));
     /* check for illegal chars in name */
     f = faststrcmp_list(d->name, CONFIG_BAD_CHARS);
     if(f != 0) {
-      fatalerror(ERROR_CONFIG,"bad char %c in NAME of def %i",f,x);
+      error(1,ERROR_CONFIG,"bad char %c in NAME of def %i",f,x);
     }
     for(z=x-1;z>=0;z--) { /* check for duplicate name */
-      if(faststrcmp(aldl->def[z].name,d->name) == 1) fatalerror(ERROR_CONFIG,
+      if(faststrcmp(aldl->def[z].name,d->name) == 1) error(1,ERROR_CONFIG,
                     "duplicate name %s at id %i and %i",
                      d->name,x,z);
     };
@@ -293,7 +293,7 @@ void load_config_c(dfile_t *config) {
 
 char *configopt_fatal(dfile_t *config, char *str) {
   char *val = configopt(config,str,NULL);
-  if(val == NULL) fatalerror(ERROR_CONFIG_MISSING,str);
+  if(val == NULL) error(1,ERROR_CONFIG_MISSING,str);
   return val;
 };
 
@@ -333,14 +333,14 @@ int configopt_int(dfile_t *config,char *str, int min, int max, int def) {
   if(in == NULL) return def;
   #endif
   int x = atoi(in);
-  if(x < min || x > max) fatalerror(ERROR_CONFIG,
+  if(x < min || x > max) error(1,ERROR_CONFIG,
                   "%s must be between %i and %i",str,min,max);
   return x;
 };
 
 int configopt_int_fatal(dfile_t *config,char *str, int min, int max) {
   int x = atoi(configopt_fatal(config,str));
-  if(x < min || x > max) fatalerror(ERROR_CONFIG,
+  if(x < min || x > max) error(1,ERROR_CONFIG,
                   "%s must be between %i and %i",str,min,max);
   return x;
 };
@@ -395,7 +395,7 @@ void dfile_strip_quotes(dfile_t *d) {
       c = d->v[x];
       while(*c != '"') {
          if(*c == EOF) {
-           fatalerror(ERROR_CONFIG,"Unterminated quote in config file");
+           error(1,ERROR_CONFIG,"Unterminated quote in config file");
          };
          c++;
       };
@@ -430,7 +430,7 @@ dfile_t *dfile(char *data) {
         if(*cx == '"') { /* skip quoted string */
           cx++;
           while(cx[0] != '"') {
-            if(cx[1] == 0) fatalerror(ERROR_CONFIG,"Unterminated quote in config");
+            if(cx[1] == 0) error(1,ERROR_CONFIG,"Unterminated quote in config");
             if(cx == data + len) continue;
             cx++;
           };
@@ -445,9 +445,9 @@ dfile_t *dfile(char *data) {
       while(is_whitespace(*cx) != 1) {
         if(*cx == '"') { /* skip quoted string */
           cx--;
-          if(cx < data) fatalerror(ERROR_CONFIG,"Unterminated quote in config");
+          if(cx < data) error(1,ERROR_CONFIG,"Unterminated quote in config");
           while(cx[0] != '"') {
-            if(cx == data) fatalerror(ERROR_CONFIG,"Unterminated quote in config"); 
+            if(cx == data) error(1,ERROR_CONFIG,"Unterminated quote in config"); 
             if(cx == data + len) continue;
             cx--;
           };

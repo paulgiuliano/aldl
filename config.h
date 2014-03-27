@@ -43,6 +43,9 @@
 #undef SERIAL_VERBOSE
 #undef SERIAL_SUPERVERBOSE
 
+/* all errors are fatal error conditions */
+#undef ALL_ERRORS_FATAL
+
 /* verbose aldl protocol level comms on stdout */
 #undef ALDL_VERBOSE
 
@@ -55,6 +58,7 @@
   #define SERIAL_VERBOSE
   #define SERIAL_SUPERVERBOSE
   #define DEBUGMEM
+  #define ALL_ERRORS_FATAL
   #define RETARDED
   #define VERBLOSITY
   #define DEBUGSTRUCT

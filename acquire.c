@@ -35,9 +35,9 @@ void *aldl_acq(void *aldl_in) {
   aldl->ready = 0;
 
   /* sanity checks */
-  if(aldl->rate > 200000) fatalerror(ERROR_TIMING,
+  if(aldl->rate > 200000) error(1,ERROR_TIMING,
                                     "acq delay (%i) too high",aldl->rate);
-  if(comm->n_packets < 1) fatalerror(ERROR_RANGE,"no packets specified");
+  if(comm->n_packets < 1) error(1,ERROR_RANGE,"no packets specified");
 
   /* timestamp for lag check */
   #ifdef LAGCHECK

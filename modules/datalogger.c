@@ -153,7 +153,7 @@ void datalogger_make_file(datalogger_conf_t *conf,aldl_conf_t *aldl) {
 
   /* open file */
   conf->fdesc = fopen(filename, "a");
-  if(conf->fdesc == NULL) fatalerror(ERROR_PLUGIN,"cannot append to log");
+  if(conf->fdesc == NULL) error(1,ERROR_PLUGIN,"cannot append to log");
 
   /* print hello string if consoleif is disabled */
   if(logger_be_quiet(aldl) == 0) {
@@ -165,10 +165,10 @@ void datalogger_make_file(datalogger_conf_t *conf,aldl_conf_t *aldl) {
 
 datalogger_conf_t *datalogger_load_config(aldl_conf_t *aldl) {
   datalogger_conf_t *conf = smalloc(sizeof(datalogger_conf_t));
-  if(aldl->datalogger_config == NULL) fatalerror(ERROR_CONFIG,
+  if(aldl->datalogger_config == NULL) error(1,ERROR_CONFIG,
                                "no datalogger config file specified");
   conf->dconf = dfile_load(aldl->datalogger_config);
-  if(conf->dconf == NULL) fatalerror(ERROR_CONFIG,
+  if(conf->dconf == NULL) error(1,ERROR_CONFIG,
                                   "datalogger config file missing");
   dfile_t *config = conf->dconf;
   conf->autostart = configopt_int(config,"AUTOSTART",0,1,1);
