@@ -69,7 +69,7 @@
 /* support multiple packets, required by some definition files,
    undefining this avoids a small amount of overhead and works
    for most ECMs */
-#undef ALDL_MULTIPACKET
+#define ALDL_MULTIPACKET
 
 /* maximum size of listen/skip buffer.   if a listen or skip attempt is larger
    than this value, an emergency realloc is done, which is a waste of time, but
