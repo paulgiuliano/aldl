@@ -179,7 +179,7 @@ inline int ftdierror(int loc,int errno) {
     return 0;
   } else {
     #ifdef SERIAL_VERBOSE
-    error(0,stderr,"FTDI DRIVER: %i, %s\n",errno,ftdi_get_error_string(ftdi));
+    error(0,ERROR_FTDI,"FTDI DRIVER: %i, %s\n",errno,ftdi_get_error_string(ftdi));
     #endif
     return 1;
   };
