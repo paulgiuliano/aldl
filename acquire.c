@@ -105,7 +105,9 @@ void *aldl_acq(void *aldl_in) {
         msleep(250);
         serialdowntime += 250;
       };
-      if(serialdowntime < aldl->comm->shutup_time) { /* assume comm ok */
+      /* assume comm ok */
+      if(aldl->comm->shutup_time > 0 &&
+         serialdowntime < aldl->comm->shutup_time) {
         set_connstate(ALDL_CONNECTED,aldl);
       };
     };
@@ -215,7 +217,8 @@ void *aldl_acq(void *aldl_in) {
 
     /* check if lagtime exceeded, and set lag state. */
     #ifdef LAGCHECK
-    if(get_elapsed_ms(lagtime) >= aldl->comm->shutup_time) {
+    if(aldl->comm->shutup_time > 0 &&
+       get_elapsed_ms(lagtime) >= aldl->comm->shutup_time) {
       set_connstate(ALDL_LAGGY,aldl);
     };
     #endif
