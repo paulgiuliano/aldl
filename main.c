@@ -163,11 +163,16 @@ void aldl_sanity_check(aldl_conf_t *aldl) {
         break;
       };
     };
-    if(pkt == NULL) error(1,ERROR_RANGE,"invalid packet specified");
+    if(pkt == NULL) error(1,ERROR_RANGE,"Invalid packet specified");
 
     /* check range */
     if(pkt->offset + def->offset > pkt->length) {
-      error(1,ERROR_RANGE,"definition out of packet range");
+      error(1,ERROR_RANGE,"Definition out of packet range");
     };
+  };
+
+  /* if we require more records to start than available ... */
+  if(aldl->bufstart > aldl->bufsize) {
+    error(1,ERROR_RANGE,"Buffer size is smaller than buffer start");
   };
 };
