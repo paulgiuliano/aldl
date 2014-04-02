@@ -379,7 +379,7 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
                        "consoleif config file missing");
   dfile_t *config = conf->dconf;
   /* GLOBAL OPTIONS */
-  conf->n_gauges = configopt_int_fatal(config,"N_GAUGES",1,99999);
+  conf->n_gauges = configopt_int_fatal(config,"N_GAUGES",1,65535);
   conf->statusbar = configopt_int(config,"STATUSBAR",0,1,0);
   conf->delay = configopt_int(config,"DELAY",0,65535,0);
   /* PER GAUGE OPTIONS */
