@@ -25,7 +25,6 @@ typedef enum _gaugetype {
   GAUGE_TEXT,
   GAUGE_BIN,
   GAUGE_ERRSTR,
-  GAUGE_SHIFT
 } gaugetype_t;
 
 typedef struct _gauge {
@@ -397,6 +396,15 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
     } else {
       error(1,ERROR_CONFIG,"consoleif: name missing from %i",n);
     };
+    /* b_name is set to a_name if not set at all ... */
+    idstring = configopt(config,gconfig("B_NAME",n),NULL);
+    if(idstring != NULL) { /* B_NAME is present */
+      gauge->data_b = get_index_by_name(aldl,idstring);
+      if(gauge->data_b == -1) error(1,ERROR_CONFIG,
+                         "consoleif: gauge %i invalid name %s",n,idstring);
+    } else {
+      gauge->data_b = gauge->data_a;
+    };
     gauge->x = configopt_int_fatal(config,gconfig("X",n),0,10000);
     gauge->y = configopt_int_fatal(config,gconfig("Y",n),0,10000);
     gauge->width = configopt_int(config,gconfig("WIDTH",n),0,10000,30);
@@ -434,12 +442,13 @@ char *gconfig(char *parameter, int n) {
 };
 
 float smooth_float(gauge_t *g) {
-  if(g->smoothing == 0) return rec->data[g->data_a].f;
+  if(g->smoothing == 0) return (rec->data[g->data_a].f +
+                              rec->data[g->data_b].f) / 2;
   int x;
   aldl_record_t *r = rec;
   float avg = 0;
   for(x=0;x<=g->smoothing;x++) {
-    avg += r->data[g->data_a].f; 
+    avg += ( r->data[g->data_a].f + r->data[g->data_b].f ) / 2; 
     if(r->prev == NULL) { /* attempt to trap underrun (might not work) */
       error(1,ERROR_BUFFER,"buffer underrun caught in %s gauge\n\
            %i smoothing w/ %i total buffer, and %i prebuffer.\n\
@@ -448,7 +457,7 @@ float smooth_float(gauge_t *g) {
     };
     r = r->prev;
   };
-  avg += rec->data[g->data_a].f * g->weight;
+  avg += ( ( r->data[g->data_a].f + r->data[g->data_a].f ) / 2 ) * g->weight;
   return avg / ( g->smoothing + g->weight + 1 );
 };
 
