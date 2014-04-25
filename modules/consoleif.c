@@ -457,7 +457,7 @@ float smooth_float(gauge_t *g) {
     };
     r = r->prev;
   };
-  avg += ( ( r->data[g->data_a].f + r->data[g->data_a].f ) / 2 ) * g->weight;
+  avg += ( ( r->data[g->data_a].f + r->data[g->data_b].f ) / 2 ) * g->weight;
   return avg / ( g->smoothing + g->weight + 1 );
 };
 
