@@ -79,11 +79,13 @@ int serial_init(char *port) {
   res = ftdi_usb_open_string(ftdi,port);
   #ifdef FTDI_RETRY_USB
   if(res<-5) ftdifatal(2,res); /* fatal open errors */
-  while(res<0) { /* device is probably just disconnected */
-    ftdierror(2,res); /* print non-fatal error */
+  if(res<0) {
     fprintf(stderr,"FTDI Device @ %s isn't connected.  Retrying...\n",port);
-    sleep(FTDI_RETRY_DELAY);
-    res = ftdi_usb_open_string(ftdi,port);
+    while(res<0) { /* device is probably just disconnected */
+      ftdierror(2,res); /* if SERIAL_VERBOSE set, display actual err */
+      sleep(FTDI_RETRY_DELAY);
+      res = ftdi_usb_open_string(ftdi,port);
+    };
   };
   #else
   ftdifatal(2,res);
