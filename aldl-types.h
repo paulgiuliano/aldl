@@ -32,6 +32,15 @@ typedef enum aldl_state {
 
 typedef unsigned char byte;
 
+/* aux command */
+
+typedef struct aldl_comq {
+  byte *command; /* the actual command to send */
+  byte length; /* length of the command */
+  int delay; /* delay in ms to wait after sending */
+  struct aldl_comq *next; /* next item in linked list */
+} aldl_comq_t;
+
 /* definition of a single multi-type data array member. */
 
 typedef union aldl_data {

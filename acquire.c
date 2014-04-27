@@ -28,6 +28,7 @@ void *aldl_acq(void *aldl_in) {
   aldl_conf_t *aldl = (aldl_conf_t *)aldl_in;
   aldl_commdef_t *comm = aldl->comm; /* direct reference to commdef */
   aldl_packetdef_t *pkt = NULL; /* temporary pointer to the packet def */
+  aldl_comq_t *auxcommand = NULL;
   int pktfail = 0; /* marker for a failed packet in event loop */
   int npkt = 0; /* array index of packet to operate on */
   int buffered = 0;
@@ -147,6 +148,18 @@ void *aldl_acq(void *aldl_in) {
     printf("ACQUIRE pkt# %i, total %i\n",npkt,ttlpkts);
     ttlpkts++;
     #endif
+
+    /* ------- command insertion routine -------------------- */
+
+    auxcommand = aldl_get_command();
+    if(auxcommand != NULL) { /* a command was found */
+      serial_write(auxcommand->command, auxcommand->length); 
+      msleep(auxcommand->delay);
+      serial_purge(); /* flush after delay to discard? */
+      /* FIXME need more logic, maybe callbacks? */
+      free(auxcommand->command);
+      free(auxcommand);
+    };
 
     /* ------- sanity checks and retrieve packet ------------ */
 

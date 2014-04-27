@@ -28,7 +28,8 @@ typedef enum aldl_lock {
   LOCK_CONNSTATE = 0,
   LOCK_RECORDPTR = 1,
   LOCK_STATS = 2,
-  N_LOCKS = 3
+  LOCK_COMQ = 3,
+  N_LOCKS = 4
 } aldl_lock_t;
 pthread_mutex_t *aldllock;
 
@@ -38,6 +39,9 @@ timespec_t firstrecordtime; /* timestamp used to calc. relative time */
 aldl_record_t *recordbuffer; /* circular pool for records */
 aldl_data_t *databuffer; /* circular pool for data */
 unsigned int indexbuffer; /* index for both of above */
+
+/* linked list forming a FIFO queue of commands */
+aldl_comq_t *comq;
 
 /* --------- local function decl. ---------------- */
 
@@ -120,6 +124,7 @@ void aldl_data_init(aldl_conf_t *aldl) {
   aldl->r = rec;
   unset_lock(LOCK_RECORDPTR);
   firstrecordtime = get_time();
+  comq = NULL; /* no records yet */
 };
 
 aldl_record_t *aldl_create_record(aldl_conf_t *aldl) {
@@ -368,4 +373,43 @@ void aldl_alloc_pool(aldl_conf_t *aldl) {
           aldl->bufsize, (unsigned int)databuffer_size/1024,
          (unsigned int)recordbuffer_size/1024);
   #endif
+};
+
+void aldl_add_command(byte *command, byte length, int delay) {
+  if(command == NULL) return;
+
+  /* build new command */
+  aldl_comq_t *n; /* new command */
+  n = smalloc(sizeof(aldl_comq_t));
+  n->length = length;
+  n->delay = delay;
+  n->command = smalloc(sizeof(char) * length);
+  int x; for(x=0;x<length;x++) { /* copy command */
+    n->command[x] = command[x];
+  };
+  n->next = NULL;
+
+  /* link in new command */
+  set_lock(LOCK_COMQ);
+  if(comq == NULL) { /* no other commands exist */
+    comq = n;
+  } else {
+    aldl_comq_t *e = comq; /* end of linked list */
+    while(e->next != NULL) e = e->next; /* seek end */
+    e->next = n; 
+  }; 
+  unset_lock(LOCK_COMQ);
+};
+
+aldl_comq_t *aldl_get_command() {
+  set_lock(LOCK_COMQ);
+  if(comq == NULL) {
+    unset_lock(LOCK_COMQ);
+    return NULL; /* no command available */
+  };
+  aldl_comq_t *c = comq;
+  comq = c->next; /* advance to next command */
+  unset_lock(LOCK_COMQ);
+  return c;
+  /* WARNING you need to free this after you're done with it ... */
 };

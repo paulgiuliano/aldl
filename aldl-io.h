@@ -23,6 +23,14 @@ byte *generate_mode(byte mode, aldl_commdef_t *comm);
 /* use generate_request to fill a packet mode str */
 byte *generate_pktcommand(aldl_packetdef_t *packet, aldl_commdef_t *comm);
 
+/* add a command to the aux command queue, which will be sent to the datastream
+   in between data acq iterations.  the command is RAW and must include all
+   necessary prefixes, suffixes, and checksums. */
+void aldl_add_command(byte *command, byte length, int delay);
+
+/* pop a command from the aux command queue.  for use by the acq thread only */
+aldl_comq_t *aldl_get_command();
+
 /* buffer management --------------------------------------*/
 
 /* WARNING: only the acquisition loop should use these functions */
