@@ -1,4 +1,4 @@
-#define VERSION "ALDL-IO 1.1d"
+#define VERSION "ALDL-IO 1.2a"
 
 /************ SCOPE *********************************
   Static #define's that apply to the entire program.
@@ -178,5 +178,11 @@
    unique identifier names. */
 #define CONFIG_BAD_CHARS "(),\"'"
 
+
+/* ------- DISPLAY CONFIG ---------------------------*/
+
 /* use units of measure in consoleif */
 #undef CONSOLEIF_UOM
+
+/* the char used for ncurses progress bar stuff */
+#define CONSOLEIF_BAR_CHAR '*'

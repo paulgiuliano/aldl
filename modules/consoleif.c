@@ -351,7 +351,7 @@ void draw_h_progressbar(gauge_t *g) {
 
   /* draw progress bar content */
   for(x=0;x<filled;x++) { /* filled section */
-    curs[0] = '*';
+    curs[0] = CONSOLEIF_BAR_CHAR;
     curs++;
   };
   for(x=0;x<remainder;x++) { /* unfilled section */
