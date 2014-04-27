@@ -35,7 +35,7 @@ typedef struct _gauge {
   float bottom, top; /* bottom and top of a graph */
   int smoothing; /* averaging */
   int weight;  /* smoothing weight */
-  int precision; /* floating point precision, only 0-1 supported */
+  int precision; /* floating point precision */
   gaugetype_t gaugetype;
 } gauge_t;
 
@@ -275,13 +275,8 @@ void draw_simpletext_a(gauge_t *g) {
   if(alarm_range(g) == 1) attron(COLOR_PAIR(RED_ON_BLACK));
   switch(def->type) {
     case ALDL_FLOAT:
-      if(g->precision == 1) {
-        mvprintw(g->y,g->x,"%s: %.1f",
-              def->name,smooth_float(g));
-      } else { /* 0 or unsupported precision */
-        mvprintw(g->y,g->x,"%s: %.0f",
-              def->name,smooth_float(g));
-      };
+      mvprintw(g->y,g->x,"%s: %.*f",
+              def->name,g->precision,smooth_float(g));
       #ifdef CONSOLEIF_UOM
       if(def->uom != NULL) printw(" %s",def->uom);
       #endif
@@ -341,7 +336,7 @@ void draw_h_progressbar(gauge_t *g) {
 
   /* get rh text width */
   int width_rhtext = sprintf(bigbuf,"] %.0f",g->top);
-  if(g->precision == 1) width_rhtext += 2;
+  if(g->precision == 1) width_rhtext += ( g->precision + 1); /* incl . */
   #ifdef CONSOLEIF_UOM
   width_rhtext += sprintf(bigbuf,"%s",def->uom);
   #endif
@@ -365,11 +360,9 @@ void draw_h_progressbar(gauge_t *g) {
   };
 
   /* draw trailing text */
-  if(g->precision == 1) { /* 1 digit precision */
-    curs += sprintf(curs,"] %.1f",data);
-  } else {
-    curs += sprintf(curs,"] %.0f",data);
-  };
+  curs += sprintf(curs,"] %.*f",g->precision,data);
+
+  /* optional UOM */
   #ifdef CONSOLEIF_UOM
   sprintf(curs,"%s",data,def->uom);
   #endif
@@ -432,7 +425,7 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
     gauge->height = configopt_int(config,gconfig("HEIGHT",n),0,10000,1);
     gauge->bottom = configopt_float(config,gconfig("MIN",n),0);
     gauge->top = configopt_float(config,gconfig("MAX",n),65535);
-    gauge->precision = configopt_int(config,gconfig("PRECISION",n),0,1,0);
+    gauge->precision = configopt_int(config,gconfig("PRECISION",n),0,20,0);
     gauge->smoothing = configopt_int(config,gconfig("SMOOTHING",n),0,1000,0);
     if(gauge->smoothing > aldl->bufstart - 1) {
       error(1,ERROR_BUFFER,"gauge %i has its smoothing setting too high\n\
