@@ -86,6 +86,9 @@ float smooth_float(gauge_t *g);
 /* check if a value is past alarm range */
 int alarm_range(gauge_t *g);
 
+/* handle ncurses input */
+void consoleif_handle_input();
+
 /* gauges -------------------*/
 void draw_h_progressbar(gauge_t *g);
 void draw_simpletext_a(gauge_t *g);
@@ -99,7 +102,7 @@ void draw_statusbar();
 void *consoleif_init(void *aldl_in) {
   aldl = (aldl_conf_t *)aldl_in;
 
-  bigbuf = malloc(512);
+  bigbuf = smalloc(512);
 
   /* load config file */
   consoleif_conf_t *conf = consoleif_load_config(aldl);
@@ -115,7 +118,10 @@ void *consoleif_init(void *aldl_in) {
     error(1,ERROR_NULL,"could not init ncurses");
   };
 
-  curs_set(0);
+  curs_set(0); /* remove cursor */
+  cbreak(); /* dont req. line break for input */
+  nodelay(root,true); /* non-blocking input */
+  noecho();
 
   start_color();
   init_pair(RED_ON_BLACK,COLOR_RED,COLOR_BLACK);
@@ -145,6 +151,7 @@ void *consoleif_init(void *aldl_in) {
       cons_wait_for_connection();
       continue;
     };
+    consoleif_handle_input();
     for(x=0;x<conf->n_gauges;x++) {
       gauge = &conf->gauge[x];
       switch(gauge->gaugetype) {
@@ -479,3 +486,10 @@ float smooth_float(gauge_t *g) {
 void consoleif_exit() {
   endwin();
 }
+
+void consoleif_handle_input() {
+  int c;
+  if((c = getch()) != ERR) {
+    /* do stuff here */
+  };
+};
