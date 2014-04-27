@@ -103,6 +103,11 @@ void *consoleif_init(void *aldl_in) {
   /* load config file */
   consoleif_conf_t *conf = consoleif_load_config(aldl);
 
+  /* if /etc/aldl/consoleif-start.sh exists, run it */
+  if(access("/etc/aldl/consoleif-start.sh",X_OK) != -1) {
+    system("/etc/aldl/consoleif-start.sh");
+  };
+
   /* initialize root window */
   WINDOW *root;
   if((root = initscr()) == NULL) {
