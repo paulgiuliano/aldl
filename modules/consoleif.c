@@ -35,6 +35,7 @@ typedef struct _gauge {
   float bottom, top; /* bottom and top of a graph */
   int smoothing; /* averaging */
   int weight;  /* smoothing weight */
+  int precision; /* floating point precision, only 0-1 supported */
   gaugetype_t gaugetype;
 } gauge_t;
 
@@ -274,8 +275,13 @@ void draw_simpletext_a(gauge_t *g) {
   if(alarm_range(g) == 1) attron(COLOR_PAIR(RED_ON_BLACK));
   switch(def->type) {
     case ALDL_FLOAT:
-      mvprintw(g->y,g->x,"%s: %.1f",
-            def->name,smooth_float(g));
+      if(g->precision == 1) {
+        mvprintw(g->y,g->x,"%s: %.1f",
+              def->name,smooth_float(g));
+      } else { /* 0 or unsupported precision */
+        mvprintw(g->y,g->x,"%s: %.0f",
+              def->name,smooth_float(g));
+      };
       #ifdef CONSOLEIF_UOM
       if(def->uom != NULL) printw(" %s",def->uom);
       #endif
@@ -314,14 +320,17 @@ int alarm_range(gauge_t *g) {
 
 void draw_h_progressbar(gauge_t *g) {
   aldl_define_t *def = &aldl->def[g->data_a];
-  float data = 0;
+  float data_lm = 0; /* limited data for progress bar */
+  float data = 0; /* unlimited data for txt display */
   switch(def->type) {
     case ALDL_INT:
     case ALDL_BOOL:
-      data = clamp_int(g->bottom,g->top,rec->data[g->data_a].i);
+      data = rec->data[g->data_a].i;
+      data_lm = clamp_int(g->bottom,g->top,data);
       break;
     case ALDL_FLOAT:
-      data = clamp_float(g->bottom,g->top,smooth_float(g));
+      data = smooth_float(g);
+      data_lm = clamp_float(g->bottom,g->top,data);
       break;
     default:
       break;
@@ -332,6 +341,7 @@ void draw_h_progressbar(gauge_t *g) {
 
   /* get rh text width */
   int width_rhtext = sprintf(bigbuf,"] %.0f",g->top);
+  if(g->precision == 1) width_rhtext += 2;
   #ifdef CONSOLEIF_UOM
   width_rhtext += sprintf(bigbuf,"%s",def->uom);
   #endif
@@ -341,7 +351,7 @@ void draw_h_progressbar(gauge_t *g) {
   
   curs = bigbuf + width_lhtext; /* set cursor after initial text */
   int pbwidth = g->width - width_lhtext - width_rhtext;
-  int filled = data / ( g->top / pbwidth );
+  int filled = data_lm / ( g->top / pbwidth );
   int remainder = pbwidth - filled;
 
   /* draw progress bar content */
@@ -353,11 +363,17 @@ void draw_h_progressbar(gauge_t *g) {
     curs[0] = ' ';
     curs++;
   };
+
+  /* draw trailing text */
+  if(g->precision == 1) { /* 1 digit precision */
+    curs += sprintf(curs,"] %.1f",data);
+  } else {
+    curs += sprintf(curs,"] %.0f",data);
+  };
   #ifdef CONSOLEIF_UOM
-  sprintf(curs,"] %.0f%s",data,def->uom);
-  #else
-  sprintf(curs,"] %.0f",data);
+  sprintf(curs,"%s",data,def->uom);
   #endif
+
   move(g->y,g->x); 
   gauge_blank(g);
 
@@ -416,6 +432,7 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
     gauge->height = configopt_int(config,gconfig("HEIGHT",n),0,10000,1);
     gauge->bottom = configopt_float(config,gconfig("MIN",n),0);
     gauge->top = configopt_float(config,gconfig("MAX",n),65535);
+    gauge->precision = configopt_int(config,gconfig("PRECISION",n),0,1,0);
     gauge->smoothing = configopt_int(config,gconfig("SMOOTHING",n),0,1000,0);
     if(gauge->smoothing > aldl->bufstart - 1) {
       error(1,ERROR_BUFFER,"gauge %i has its smoothing setting too high\n\
