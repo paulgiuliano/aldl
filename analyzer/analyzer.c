@@ -238,7 +238,7 @@ void post_calc() {
 void log_knock(char *line) {
   /* check timestamp minimum */
   if(csvint(line,anl_conf->col_timestamp) < anl_conf->valid_min_time) {
-    anl_knock->last = csvint(line,anl_conf->col_knock);; /* keep-alive */
+    anl_knock->last = csvint(line,anl_conf->col_knock); /* keep-alive */
     return;
   };
 
@@ -251,7 +251,7 @@ void log_knock(char *line) {
 
   /* if rolled counter, or restarting, we dont care which */
   /* (this does mean we're throwing away knock counts on rollover) */
-  if(anl_knock->last > knock) {
+  if(knock_amount < 0) {
     anl_knock->last = knock; /* start with new value */
     return;
   };
