@@ -280,7 +280,7 @@ void log_knock(char *line) {
 
 void print_results_knock() {
   printf("\n**** Knock Increment vs RPM vs MAP ****\n");
-  printf("(Records with count incr. < %i ignored)\n",anl_conf->blm_min_count);
+  printf("(Records with count incr. < %i ignored)\n",anl_conf->min_knock);
 
   printf("(This is a total of RECORDS with knock count, NOT ECM counts\n\n");
   int maprow = 0;
