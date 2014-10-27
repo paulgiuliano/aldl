@@ -8,10 +8,11 @@ LIBS= -lpthread -lrt -lncurses
 CONFIGDIR= /etc/aldl
 LOGDIR= /var/log/aldl
 BINDIR= /usr/local/bin
-BINARIES= aldl-ftdi aldl-dummy
+BINARIES= aldl-ftdi aldl-tty aldl-dummy
 
 .PHONY: clean install stats modules_
 
+# not building tty driver by default yet
 all: aldl-ftdi aldl-dummy analyzer_
 	@echo
 	@echo '*********************************************************'
@@ -20,6 +21,7 @@ all: aldl-ftdi aldl-dummy analyzer_
 	@echo '*********************************************************'
 	@echo
 
+# not installing tty driver by default yet
 install: aldl-ftdi aldl-dummy analyzer_
 	@echo Installing to $(BINDIR)
 	cp -fv $(BINARIES) $(BINDIR)/
@@ -55,6 +57,9 @@ aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
 	@echo '***************************************************'
 	@echo
 
+aldl-tty: main.c serio-tty.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
+	gcc $(CFLAGS) $(LIBS) main.c -o aldl-tty $(OBJS) $(MODULES) serio-tty.o
+
 aldl-dummy: main.c serio-dummy.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
 	gcc $(CFLAGS) $(LIBS) main.c -o aldl-dummy $(OBJS) $(MODULES) serio-dummy.o
 
@@ -79,6 +84,9 @@ analyzer_:
 serio-ftdi.o: serio-ftdi.c aldl-io.h aldl-types.h config.h
 	gcc $(CFLAGS) -c serio-ftdi.c -o serio-ftdi.o
 
+serio-tty.o: serio-tty.c aldl-io.h aldl-types.h config.h
+	gcc $(CFLAGS) -c serio-tty.c -o serio-tty.o
+
 serio-dummy.o: serio-dummy.c aldl-io.h aldl-types.h config.h
 	gcc $(CFLAGS) -c serio-dummy.c -o serio-dummy.o
 
@@ -89,7 +97,7 @@ aldldata.o: aldl-io.h aldl-types.h aldldata.c aldlcomm.o config.h
 	gcc $(CFLAGS) -c aldldata.c -o aldldata.o
 
 clean:
-	rm -fv *.o *.a aldl-ftdi aldl-dummy
+	rm -fv *.o *.a $(BINARIES)
 	cd modules ; make clean ; cd ..
 	cd analyzer ; make clean ; cd ..
 
