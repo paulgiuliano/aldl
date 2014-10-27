@@ -8,6 +8,8 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
+#include <termios.h>
+
 #include "serio.h"
 #include "aldl-io.h"
 #include "error.h"
@@ -22,6 +24,11 @@
 /* bail with fatal error since driver doesn't work yet. */
 #define SERIAL_DRIVER_BROKEN
 
+/****************GLOBALS****************************************/
+
+int fd; /* file descriptor of serial port */
+struct termios term_old,term_new;
+
 /****************FUNCTIONS**************************************/
 
 void serial_close() {
@@ -34,7 +41,18 @@ int serial_init(char *port) {
   error(EFATAL,ERROR_SERIAL,"The serial driver doesn't work yet.  Use FTDI.");
   #endif
 
-  /* init serial port */
+  /* open serial port */
+  fd = open(port, O_RDWR | O_NOCTTY);
+  if(fd < 0) { /* failed to open port */ 
+    error(EFATAL,ERROR_SERIAL,"Couldn't open file descriptor for device %s",
+          port);
+  };
+
+  tcgetattr(fd,&term_old); /* save old attr */
+  bzero(&term_new,sizeof(term_new)); /* clear new struct */
+
+  /* configure serial device here */
+
   return 1;
 };
 
