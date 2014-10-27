@@ -19,7 +19,7 @@ char errstr[N_ERRORCODES][24] = {
 "GENERAL",
 "NULL",
 "OUT OF MEMORY",
-"FTDI DRIVER",
+"COMM DRIVER",
 "OUT OF RANGE",
 "TIMING",
 "CONFIG",
@@ -33,7 +33,7 @@ char errstr[N_ERRORCODES][24] = {
 
 void error(errtype_t t, error_t code, char *str, ...) {
   va_list arg;
-  fprintf(stderr,"ALDL-IO ERROR!!\n");
+  fprintf(stderr,"ALDL-IO: ");
   fprintf(stderr,"%s ERROR (%i)\n",errstr[code],code);
   if(str != NULL) {
     fprintf(stderr,"NOTES: ");

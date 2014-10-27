@@ -16,7 +16,8 @@ typedef enum _error {
   ERROR_GENERAL=0,
   ERROR_NULL=1,
   ERROR_MEMORY=2,
-  ERROR_FTDI=3,
+  ERROR_FTDI=3, /* legacy */
+  ERROR_SERIAL=3,
   ERROR_RANGE=4,
   ERROR_TIMING=5,
   ERROR_CONFIG=6,
