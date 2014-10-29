@@ -57,7 +57,7 @@ aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
 	@echo '***************************************************'
 	@echo
 
-eeflash-ftdi: eeflash.c serio-ftdi.o config.h aldl-io.h aldl-types.h $(OBJS)
+eeflash-ftdi: eeflash.c config.h aldl-io.h aldl-types.h $(OBJS)
 	gcc $(CFLAGS) $(LIBS) -lftdi eeflash.c -o eeflash-ftdi $(OBJS) serio-ftdi.o
 
 aldl-tty: main.c serio-tty.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
@@ -93,7 +93,7 @@ serio-tty.o: serio-tty.c aldl-io.h aldl-types.h config.h
 serio-dummy.o: serio-dummy.c aldl-io.h aldl-types.h config.h
 	gcc $(CFLAGS) -c serio-dummy.c -o serio-dummy.o
 
-aldlcomm.o: aldl-io.h aldlcomm.c aldl-types.h serio-ftdi.o config.h
+aldlcomm.o: aldl-io.h aldlcomm.c aldlcomm.h aldl-types.h serio-ftdi.o config.h
 	gcc $(CFLAGS) -c aldlcomm.c -o aldlcomm.o
 
 aldldata.o: aldl-io.h aldl-types.h aldldata.c aldlcomm.o config.h
