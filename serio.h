@@ -19,10 +19,6 @@ int serial_write(byte *str, int len);
    isn't there. */
 int serial_read(byte *str, int len);
 
-/* listen for something.  it must match str exactly, if str is non-null.
-   len is the length of str if it is known, or not null terminated. */
-int serial_listen(byte *str, int len, int max, int timeout);
-
 /* clears any i/o buffers */
 void serial_purge(); /* both buffers */
 void serial_purge_rx(); /* rx only */
