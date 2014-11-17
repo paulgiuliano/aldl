@@ -12,6 +12,7 @@
 #include "error.h"
 #include "aldl-io.h"
 #include "useful.h"
+#include "rflib/rflib.h"
 
 /************ SCOPE *********************************
   This object contains configuration file loading
@@ -221,14 +222,14 @@ void load_config_c(dfile_t *config) {
   for(x=0;x<aldl->n_defs;x++) {
     d = &aldl->def[x]; /* shortcut to def */
     tmp=configopt(config,dconfig(configstr,"TYPE",x),"FLOAT");
-    if(faststrcmp(tmp,"BINARY") == 1 || faststrcmp(tmp,"ERROR") == 1) {
+    if(rf_strcmp(tmp,"BINARY") == 1 || rf_strcmp(tmp,"ERROR") == 1) {
       d->type=ALDL_BOOL;
       d->binary=configopt_int_fatal(config,dconfig(configstr,"BINARY",x),0,7);
       d->invert=configopt_int(config,dconfig(configstr,"INVERT",x),0,1,0);
       d->uom=NULL;
-      if(faststrcmp(tmp,"ERROR") == 1) d->err = 1;
+      if(rf_strcmp(tmp,"ERROR") == 1) d->err = 1;
     } else {
-      if(faststrcmp(tmp,"FLOAT") == 1) {
+      if(rf_strcmp(tmp,"FLOAT") == 1) {
         d->type=ALDL_FLOAT;
         d->precision=configopt_int(config,dconfig(configstr,"PRECISION",x),0,1000,0);
         d->min.f=configopt_float(config,dconfig(configstr,"MIN",x),0);
@@ -237,7 +238,7 @@ void load_config_c(dfile_t *config) {
         d->multiplier.f=configopt_float(config,dconfig(configstr,"MULTIPLIER",x),1);
         d->alarm_low.f=configopt_float(config,dconfig(configstr,"ALARM_LOW",x),0);
         d->alarm_high.f=configopt_float(config,dconfig(configstr,"ALARM_HIGH",x),0);
-      } else if(faststrcmp(tmp,"INT") == 1) {
+      } else if(rf_strcmp(tmp,"INT") == 1) {
         d->type=ALDL_INT; 
         d->min.i=configopt_int(config,dconfig(configstr,"MIN",x),-32678,32767,0);
         d->max.i=configopt_int(config,dconfig(configstr,"MAX",x),-32678,32767,65535);
@@ -254,7 +255,7 @@ void load_config_c(dfile_t *config) {
       d->uom=configopt(config,dconfig(configstr,"UOM",x),NULL);
       /* check for illegal chars in uom */
       if(d->uom != NULL) {
-        f = faststrcmp_list(d->uom, CONFIG_BAD_CHARS);
+        f = rf_listcmp(d->uom, CONFIG_BAD_CHARS);
         if(f != 0) {
           error(1,ERROR_CONFIG,"bad char %c in UOM of def %i",f,x);
         }
@@ -272,12 +273,12 @@ void load_config_c(dfile_t *config) {
                         "packet %i out of range in def %i",d->packet,x);
     d->name=configopt_fatal(config,dconfig(configstr,"NAME",x));
     /* check for illegal chars in name */
-    f = faststrcmp_list(d->name, CONFIG_BAD_CHARS);
+    f = rf_listcmp(d->name, CONFIG_BAD_CHARS);
     if(f != 0) {
       error(1,ERROR_CONFIG,"bad char %c in NAME of def %i",f,x);
     }
     for(z=x-1;z>=0;z--) { /* check for duplicate name */
-      if(faststrcmp(aldl->def[z].name,d->name) == 1) error(1,ERROR_CONFIG,
+      if(rf_strcmp(aldl->def[z].name,d->name) == 1) error(1,ERROR_CONFIG,
                     "duplicate name %s at id %i and %i",
                      d->name,x,z);
     }
@@ -530,7 +531,7 @@ char *load_file(char *filename) {
 char *value_by_parameter(char *str, dfile_t *d) {
   int x;
   for(x=0;x<d->n;x++) {
-    if(faststrcmp(str,d->p[x]) == 1) return d->v[x];
+    if(rf_strcmp(str,d->p[x]) == 1) return d->v[x];
   }
   return NULL;
 }

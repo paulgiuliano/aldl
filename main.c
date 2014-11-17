@@ -14,6 +14,7 @@
 #include "aldl-io.h"
 #include "useful.h"
 #include "serio.h"
+#include "rflib/rflib.h"
 
 #include "modules/modules.h"
 
@@ -78,17 +79,17 @@ int main(int argc, char **argv) {
 void parse_cmdline(int argc, char **argv, aldl_conf_t *aldl) {
   int n_arg = 0;
   for(n_arg=1;n_arg<argc;n_arg++) {
-    if(faststrcmp(argv[n_arg],"configtest") == 1) {
+    if(rf_strcmp(argv[n_arg],"configtest") == 1) {
       printf("Loaded config OK.  Exiting...\n");
       exit(0);
-    } else if(faststrcmp(argv[n_arg],"devices") == 1) {
+    } else if(rf_strcmp(argv[n_arg],"devices") == 1) {
       serial_help_devs();
       exit(0);
-    } else if(faststrcmp(argv[n_arg],"consoleif") == 1) {
+    } else if(rf_strcmp(argv[n_arg],"consoleif") == 1) {
       aldl->consoleif_enable = 1;
-    } else if(faststrcmp(argv[n_arg],"datalogger") == 1) {
+    } else if(rf_strcmp(argv[n_arg],"datalogger") == 1) {
       aldl->datalogger_enable = 1;
-    } else if(faststrcmp(argv[n_arg],"remote") == 1) {
+    } else if(rf_strcmp(argv[n_arg],"remote") == 1) {
       aldl->remote_enable = 1;
     } else {
       error(1,ERROR_NULL,"Option %s not recognized",argv[n_arg]);

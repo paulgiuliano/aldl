@@ -10,6 +10,7 @@
 #include "../config.h"
 #include "../loadconfig.h"
 #include "../useful.h"
+#include "../rflib/rflib.h"
 
 enum {
   RED_ON_BLACK = 1,
@@ -328,11 +329,11 @@ void draw_h_progressbar(gauge_t *g) {
     case ALDL_INT:
     case ALDL_BOOL:
       data = rec->data[g->data_a].i;
-      data_lm = clamp_int(g->bottom,g->top,data);
+      data_lm = rf_clamp_int(g->bottom,g->top,data);
       break;
     case ALDL_FLOAT:
       data = smooth_float(g);
-      data_lm = clamp_float(g->bottom,g->top,data);
+      data_lm = rf_clamp_float(g->bottom,g->top,data);
       break;
     default:
       break;
@@ -443,13 +444,13 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
     gauge->weight = configopt_int(config,gconfig("WEIGHT",n),0,500,0);
     /* TYPE SELECTOR */
     char *gtypestr = configopt_fatal(config,gconfig("TYPE",n));
-    if(faststrcmp(gtypestr,"HBAR") == 1) {
+    if(rf_strcmp(gtypestr,"HBAR") == 1) {
       gauge->gaugetype = GAUGE_HBAR;
-    } else if(faststrcmp(gtypestr,"TEXT") == 1) {
+    } else if(rf_strcmp(gtypestr,"TEXT") == 1) {
       gauge->gaugetype = GAUGE_TEXT;
-    } else if(faststrcmp(gtypestr,"BIN") == 1) {
+    } else if(rf_strcmp(gtypestr,"BIN") == 1) {
       gauge->gaugetype = GAUGE_BIN;
-    } else if(faststrcmp(gtypestr,"ERRSTR") == 1) {
+    } else if(rf_strcmp(gtypestr,"ERRSTR") == 1) {
       gauge->gaugetype = GAUGE_ERRSTR;
     } else {
       error(1,ERROR_CONFIG,"consoleif: gauge %i bad type %s",n,gtypestr);

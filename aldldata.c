@@ -14,6 +14,7 @@
 #include "config.h"
 #include "aldl-io.h"
 #include "useful.h"
+#include "rflib/rflib.h"
 
 /************ SCOPE *********************************
   This object contains all of the functions used for
@@ -203,13 +204,13 @@ aldl_data_t *aldl_parse_def(aldl_conf_t *aldl, aldl_record_t *r, int n) {
     case ALDL_INT:
       out->i = ( (int)x * def->multiplier.i ) + def->adder.i;
       if(aldl->minmax == 1) {
-        out->i = clamp_int(def->min.i,def->max.i,out->i);
+        out->i = rf_clamp_int(def->min.i,def->max.i,out->i);
       }
       break;
     case ALDL_FLOAT:
       out->f = ( (float)x * def->multiplier.f ) + def->adder.f;
       if(aldl->minmax == 1) {
-        out->f = clamp_float(def->min.f,def->max.f,out->f); 
+        out->f = rf_clamp_float(def->min.f,def->max.f,out->f); 
       }
       break;
     case ALDL_BOOL:
@@ -327,7 +328,7 @@ void pause_until_buffered(aldl_conf_t *aldl) {
 int get_index_by_name(aldl_conf_t *aldl, char *name) {
   int x;
   for(x=0;x<aldl->n_defs;x++) {
-    if(faststrcmp(name,aldl->def[x].name) == 1) return x;
+    if(rf_strcmp(name,aldl->def[x].name) == 1) return x;
   }
   return -1; /* not found */
 }
