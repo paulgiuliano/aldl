@@ -92,8 +92,8 @@ void parse_cmdline(int argc, char **argv, aldl_conf_t *aldl) {
       aldl->remote_enable = 1;
     } else {
       error(1,ERROR_NULL,"Option %s not recognized",argv[n_arg]);
-    };
-  };
+    }
+  }
 }
 
 void modules_verify(aldl_conf_t *aldl) {
@@ -102,24 +102,24 @@ void modules_verify(aldl_conf_t *aldl) {
   if(aldl->consoleif_enable == 0 &&
      aldl->datalogger_enable == 0) {
     error(1,ERROR_PLUGIN,"no plugins are enabled");
-  };
+  }
 }
 
 void modules_start(aldl_threads_t *thread, aldl_conf_t *aldl) {
   if(aldl->consoleif_enable == 1) {
     pthread_create(&thread->consoleif,NULL,
                    consoleif_init,(void *) aldl);
-  };
+  }
 
   if(aldl->datalogger_enable == 1) {
     pthread_create(&thread->datalogger,NULL,
                    datalogger_init,(void *) aldl);
-  };
+  }
 
   if(aldl->remote_enable == 1) {
     pthread_create(&thread->remote,NULL,
                     remote_init,(void *) aldl);
-  };
+  }
 }
 
 void acq_start(aldl_threads_t *thread, aldl_conf_t *aldl) {
@@ -161,18 +161,18 @@ void aldl_sanity_check(aldl_conf_t *aldl) {
       if(aldl->comm->packet[id].id == def->packet) {
         pkt = &aldl->comm->packet[id]; 
         break;
-      };
-    };
+      }
+    }
     if(pkt == NULL) error(1,ERROR_RANGE,"Invalid packet specified");
 
     /* check range */
     if(pkt->offset + def->offset > pkt->length) {
       error(1,ERROR_RANGE,"Definition out of packet range");
-    };
-  };
+    }
+  }
 
   /* if we require more records to start than available ... */
   if(aldl->bufstart > aldl->bufsize) {
     error(1,ERROR_RANGE,"Buffer size is smaller than buffer start");
-  };
-};
+  }
+}

@@ -58,7 +58,7 @@ void serial_close() {
   if(ftdistatus > 0) {
     ftdi_usb_close(ftdi);
     ftdi_free(ftdi);
-  };
+  }
 }
 
 int serial_init(char *port) {
@@ -74,7 +74,7 @@ int serial_init(char *port) {
   /* new ftdi instance */
   if((ftdi = ftdi_new()) == NULL) {
     error(1,ERROR_FTDI,"ftdi_new failed");
-  };
+  }
   
   res = ftdi_usb_open_string(ftdi,port);
   #ifdef FTDI_RETRY_USB
@@ -85,8 +85,8 @@ int serial_init(char *port) {
       ftdierror(2,res); /* if SERIAL_VERBOSE set, display actual err */
       sleep(FTDI_RETRY_DELAY);
       res = ftdi_usb_open_string(ftdi,port);
-    };
-  };
+    }
+  }
   #else
   ftdifatal(2,res);
   #endif
@@ -103,7 +103,7 @@ int serial_init(char *port) {
 
   ftdistatus = 1;
   return 1;
-};
+}
 
 void serial_purge() {
   ftdierror_counter(88,ftdi_usb_purge_buffers(ftdi));
@@ -134,7 +134,7 @@ int serial_write(byte *str, int len) {
         printf("non-fatal, attempted serial write of 0 len or null string\n");
       #endif
       return 1;
-    };
+    }
   #endif
   #ifdef SERIAL_SUPERVERBOSE
   printf("WRITE: ");
@@ -153,7 +153,7 @@ int serial_read(byte *str, int len) {
         printf("non-fatal, attempted serial read to NULL buffer or 0 len\n");
       #endif
       return 0;
-    };
+    }
   #endif
   int resp = 0; /* to store response from whatever read */
   resp = ftdi_read_data(ftdi,(unsigned char *)str,len);
@@ -164,7 +164,7 @@ int serial_read(byte *str, int len) {
     printhexstring(str,resp);
   } else {
     printf("EMPTY\n");
-  };
+  }
   #endif
 
   return resp; /* return number of bytes read, or zero */
@@ -173,8 +173,8 @@ int serial_read(byte *str, int len) {
 inline void ftdifatal(int loc,int errno) {
   if(ftdierror(loc,errno) > 0) {
     error(1,ERROR_FTDI,"*** See above FTDI DRIVER error message @ stderr");
-  };
-};
+  }
+}
 
 inline int ftdierror(int loc,int errno) {
   if(errno>=0) { /* no error */
@@ -184,8 +184,8 @@ inline int ftdierror(int loc,int errno) {
     error(0,ERROR_FTDI,"FTDI DRIVER: %i, %s\n",errno,ftdi_get_error_string(ftdi));
     #endif
     return 1;
-  };
-};
+  }
+}
 
 inline int ftdierror_counter(int loc,int errno) {
   if(errno>=0) { /* no error */
@@ -198,8 +198,8 @@ inline int ftdierror_counter(int loc,int errno) {
     #endif
     if(iofail > FTDI_MAXFAIL) ftdi_recovery();
     return 1;
-  };
-};
+  }
+}
 
 inline void ftdi_recovery() {
   #ifdef FTDI_ATTEMPT_RECOVERY
@@ -211,7 +211,7 @@ inline void ftdi_recovery() {
   msleep(500);
   serial_init(serialstr);
   #endif
-};
+}
 
 void serial_help_devs() {
   int ret, i;
@@ -235,8 +235,8 @@ void serial_help_devs() {
 
   ftdi_list_free(&devlist);
   ftdi_deinit(ftdi);
-};
+}
 
 int serial_get_status() {
   return ftdistatus;
-};
+}

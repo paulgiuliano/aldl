@@ -110,13 +110,13 @@ void *consoleif_init(void *aldl_in) {
   /* if /etc/aldl/consoleif-start.sh exists, run it */
   if(access("/etc/aldl/consoleif-start.sh",X_OK) != -1) {
     system("/etc/aldl/consoleif-start.sh");
-  };
+  }
 
   /* initialize root window */
   WINDOW *root;
   if((root = initscr()) == NULL) {
     error(1,ERROR_NULL,"could not init ncurses");
-  };
+  }
 
   curs_set(0); /* remove cursor */
   cbreak(); /* dont req. line break for input */
@@ -150,7 +150,7 @@ void *consoleif_init(void *aldl_in) {
     if(rec == NULL) { /* disconnected */
       cons_wait_for_connection();
       continue;
-    };
+    }
     consoleif_handle_input();
     for(x=0;x<conf->n_gauges;x++) {
       gauge = &conf->gauge[x];
@@ -169,14 +169,14 @@ void *consoleif_init(void *aldl_in) {
           break;
         default:
           break;
-      };
-    };
+      }
+    }
     if(conf->statusbar == 1) {
       draw_statusbar();
-    };
+    }
     refresh();
     usleep(conf->delay);
-  };
+  }
 
   sleep(4);
   delwin(root);
@@ -185,7 +185,7 @@ void *consoleif_init(void *aldl_in) {
 
   pthread_exit(NULL);
   return NULL;
-};
+}
 
 int xcenter(int width) {
   return ( w_width / 2 ) - ( width / 2 );
@@ -197,7 +197,7 @@ int ycenter(int height) {
 
 void print_centered_string(char *str) {
   mvaddstr(ycenter(0),xcenter(strlen(str)),str);
-};
+}
 
 void draw_statusbar() {
   lock_stats();
@@ -212,8 +212,8 @@ void draw_statusbar() {
   } else { /* lg statusbar */
     mvprintw(w_height - 1,1,"%s  TIMESTAMP: %i  PKT/S: %.1f  FAILED: %u  ",
              VERSION, rec->t, pps, failcounter);
-  };
-};
+  }
+}
 
 void statusmessage(char *str) {
   clear();
@@ -223,7 +223,7 @@ void statusmessage(char *str) {
   attroff(COLOR_PAIR(COLOR_STATUSSCREEN));
   refresh();
   usleep(5000);
-};
+}
 
 void cons_wait_for_connection() {
   aldl_state_t s = ALDL_LOADING;
@@ -235,8 +235,8 @@ void cons_wait_for_connection() {
       s_cache = s; /* reset cache */
     } else {
       usleep(10000); /* checking conn state too fast is bad */
-    };
-  };
+    }
+  }
 
   statusmessage("Buffering...");
   pause_until_buffered(aldl);
@@ -254,7 +254,7 @@ void draw_bin(gauge_t *g) {
   attron(COLOR_PAIR(GREEN_ON_BLACK));
   mvprintw(g->y,g->x,"%s",def->name);
   attroff(COLOR_PAIR(GREEN_ON_BLACK));
-};
+}
 
 void draw_errstr(gauge_t *g) {
   int errfound = 0; 
@@ -269,11 +269,11 @@ void draw_errstr(gauge_t *g) {
         if(errfound == 1) mvprintw(g->y,g->x,"ERROR:");
         printw(" %s",aldl->def[x].name);
         attroff(COLOR_PAIR(RED_ON_BLACK));
-      };
-    };
-  };
+      }
+    }
+  }
   if(errfound == 0) mvprintw(g->y,g->x,"NO ERRORS");
-};
+}
 
 void draw_simpletext_a(gauge_t *g) {
   aldl_define_t *def = &aldl->def[g->data_a];
@@ -298,9 +298,9 @@ void draw_simpletext_a(gauge_t *g) {
       break;
     default:
       return;
-  };
+  }
   if(alarm_range(g) == 1) attroff(COLOR_PAIR(RED_ON_BLACK));
-};
+}
 
 int alarm_range(gauge_t *g) {
   aldl_define_t *def = &aldl->def[g->data_a];
@@ -317,8 +317,8 @@ int alarm_range(gauge_t *g) {
       return 0;
     default:
       return 0;
-  };
-};
+  }
+}
 
 void draw_h_progressbar(gauge_t *g) {
   aldl_define_t *def = &aldl->def[g->data_a];
@@ -336,7 +336,7 @@ void draw_h_progressbar(gauge_t *g) {
       break;
     default:
       break;
-  };
+  }
 
   int x;
   char *curs;
@@ -360,11 +360,11 @@ void draw_h_progressbar(gauge_t *g) {
   for(x=0;x<filled;x++) { /* filled section */
     curs[0] = CONSOLEIF_BAR_CHAR;
     curs++;
-  };
+  }
   for(x=0;x<remainder;x++) { /* unfilled section */
     curs[0] = ' ';
     curs++;
-  };
+  }
 
   /* draw trailing text */
   curs += sprintf(curs,"] %.*f",g->precision,data);
@@ -380,13 +380,13 @@ void draw_h_progressbar(gauge_t *g) {
   if(alarm_range(g) == 1) attron(COLOR_PAIR(RED_ON_BLACK));
   mvaddstr(g->y,g->x,bigbuf);
   if(alarm_range(g) == 1) attroff(COLOR_PAIR(RED_ON_BLACK));
-};
+}
 
 void gauge_blank(gauge_t *g) {
   move(g->y,g->x);
   int x;
   for(x=0;x<g->width;x++) addch(' ');
-};
+}
 
 /*---- * LOAD CONFIG *--------------------------- */
 
@@ -416,7 +416,7 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
                          "consoleif: gauge %i invalid name %s",n,idstring);
     } else {
       error(1,ERROR_CONFIG,"consoleif: name missing from %i",n);
-    };
+    }
     /* b_name is set to a_name if not set at all ... */
     idstring = configopt(config,gconfig("B_NAME",n),NULL);
     if(idstring != NULL) { /* B_NAME is present */
@@ -425,7 +425,7 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
                          "consoleif: gauge %i invalid name %s",n,idstring);
     } else {
       gauge->data_b = gauge->data_a;
-    };
+    }
     gauge->x = configopt_int_fatal(config,gconfig("X",n),0,10000);
     gauge->y = configopt_int_fatal(config,gconfig("Y",n),0,10000);
     gauge->width = configopt_int(config,gconfig("WIDTH",n),0,10000,30);
@@ -439,7 +439,7 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
                   gauge smoothing %i, but prebuffer is %i\n\
               please decrease smoothing or increase prebuffer.",
                  n,gauge->smoothing,aldl->bufstart);
-    };
+    }
     gauge->weight = configopt_int(config,gconfig("WEIGHT",n),0,500,0);
     /* TYPE SELECTOR */
     char *gtypestr = configopt_fatal(config,gconfig("TYPE",n));
@@ -453,15 +453,15 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
       gauge->gaugetype = GAUGE_ERRSTR;
     } else {
       error(1,ERROR_CONFIG,"consoleif: gauge %i bad type %s",n,gtypestr);
-    };
-  };
+    }
+  }
   return conf;
-};
+}
 
 char *gconfig(char *parameter, int n) {
   sprintf(bigbuf,"G%i.%s",n,parameter);
   return bigbuf;
-};
+}
 
 float smooth_float(gauge_t *g) {
   if(g->smoothing == 0) return (rec->data[g->data_a].f +
@@ -476,12 +476,12 @@ float smooth_float(gauge_t *g) {
            %i smoothing w/ %i total buffer, and %i prebuffer.\n\
             please decrease smoothing or increase prebuffer settings!!",
          aldl->def[g->data_a].name,g->smoothing,aldl->bufsize,aldl->bufstart);
-    };
+    }
     r = r->prev;
-  };
+  }
   avg += ( ( r->data[g->data_a].f + r->data[g->data_b].f ) / 2 ) * g->weight;
   return avg / ( g->smoothing + g->weight + 1 );
-};
+}
 
 void consoleif_exit() {
   endwin();
@@ -491,5 +491,5 @@ void consoleif_handle_input() {
   int c;
   if((c = getch()) != ERR) {
     /* do stuff here */
-  };
-};
+  }
+}

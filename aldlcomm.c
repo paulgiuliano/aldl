@@ -48,7 +48,7 @@ int aldl_reconnect(aldl_commdef_t *c) {
       aldl_waitforchatter(c);
     } else {
       msleep(c->idledelay);
-    };
+    }
     if(aldl_shutup(c) == 1) {
       /* a delay here seems necessary ... */
       msleep(50);
@@ -57,8 +57,8 @@ int aldl_reconnect(aldl_commdef_t *c) {
     } else { /* shutup request failed */
       msleep(50);
       serial_purge();
-    };
-  };
+    }
+  }
   return 0;
 }
 
@@ -79,7 +79,7 @@ int aldl_waitforchatter(aldl_commdef_t *c) {
     giveupcount++;
     if(giveupcount > GIVEUPWAITING) exit(0);
     #endif
-  };
+  }
   #ifdef ALDL_VERBOSE
     printf("got idle chatter or something.\n");
   #endif
@@ -158,7 +158,7 @@ inline int skip_bytes(int bytes, int timeout) {
     error(0,ERROR_MEMORY,"skip_bytes %i required emergency realloc\n",
                                 bytes);
     #endif
-  };
+  }
   /* read into commbuf and then forget about it */
   int bytes_read = read_bytes(commbuf,bytes,timeout);
   #ifdef SERIAL_VERBOSE
@@ -176,7 +176,7 @@ int listen_bytes(byte *str, int len, int max, int timeout) {
     error(0,ERROR_MEMORY,"skip_bytes %i required emergency realloc\n",
                                 max);
     #endif
-  };
+  }
   int chars_read = 0; /* total chars read into buffer */
   int chars_in = 0; /* chars added to buffer */
   timespec_t timestamp = get_time(); /* timestamp beginning of op */
@@ -190,8 +190,8 @@ int listen_bytes(byte *str, int len, int max, int timeout) {
       chars_read += chars_in; /* mv cursor */
       if(cmp_bytestring(commbuf,chars_read,str,len) == 1) {
         return 1;
-      };
-    };
+      }
+    }
     /* timeout and throttling routine */
     #ifndef AGGRESSIVE
     usleep(SLEEPYTIME); /* timing delay */
@@ -202,9 +202,9 @@ int listen_bytes(byte *str, int len, int max, int timeout) {
         printf("LISTEN TIMEOUT\n");
         #endif
         return 0;
-      };
-    };
-  };
+      }
+    }
+  }
   #ifdef SERIAL_VERBOSE
   printf("STRING NOT FOUND, GOT: ");
   printhexstring(commbuf,chars_read);
@@ -234,8 +234,8 @@ byte *generate_mode(byte mode, aldl_commdef_t *comm) {
   tmp[2] = mode;
   tmp[3] = checksum_generate(tmp,4-1);
   return tmp;
-};
+}
 
 void alloc_commbuf() {
   commbuf = smalloc(sizeof(byte) * ALDL_COMMBUFFER);
-};
+}

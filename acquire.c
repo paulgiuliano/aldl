@@ -53,7 +53,7 @@ void *aldl_acq(void *aldl_in) {
     /* if we init the frequency with freq max, that will ensure that each
        packet is iterated once at the beginning of the acq. routine */
     freq_counter[freq_init] = comm->packet[freq_init].frequency;
-  };
+  }
   #endif
 
   /* set timestamp */
@@ -85,7 +85,7 @@ void *aldl_acq(void *aldl_in) {
       } else {
         /* reached frequency, reset to 1 */
         freq_counter[npkt] = 1;
-      };
+      }
     #endif
 
     pkt = &comm->packet[npkt]; /* pointer to the correct packet */
@@ -105,13 +105,13 @@ void *aldl_acq(void *aldl_in) {
            loop. */
         msleep(250);
         serialdowntime += 250;
-      };
+      }
       /* assume comm ok */
       if(aldl->comm->shutup_time > 0 &&
          serialdowntime < aldl->comm->shutup_time) {
         set_connstate(ALDL_CONNECTED,aldl);
-      };
-    };
+      }
+    }
 
     /* this would seem an appropriate time to maintain the connection if it
        drops, or if it never existed ... if not, time for a delay */
@@ -123,7 +123,7 @@ void *aldl_acq(void *aldl_in) {
       /* delay between data collection iterations */
       usleep(aldl->rate);
     #endif
-    };
+    }
 
     /* reset lag check timer, note that the above instructions are not covered
        in lagtime measurement, so they need to be FAST .... */
@@ -140,7 +140,7 @@ void *aldl_acq(void *aldl_in) {
       unlock_stats();
       timestamp = get_time();
       pktcounter = 0;
-    };
+    }
     #endif
 
     /* print debugging info */
@@ -159,7 +159,7 @@ void *aldl_acq(void *aldl_in) {
       /* FIXME need more logic, maybe callbacks? */
       free(auxcommand->command);
       free(auxcommand);
-    };
+    }
 
     /* ------- sanity checks and retrieve packet ------------ */
 
@@ -199,7 +199,7 @@ void *aldl_acq(void *aldl_in) {
       #ifdef VERBLOSITY
       printf("checksum failed @ pkt %i...\n",npkt);
       #endif
-    };
+    }
 
     /* handle condition of a bad packet */
     if(pktfail == 1) {
@@ -212,7 +212,7 @@ void *aldl_acq(void *aldl_in) {
       /* --- set a desync state if we're getting lots of fails in a row */
       if(aldl->stats->failcounter > aldl->maxfail) {
         set_connstate(ALDL_DESYNC,aldl);
-      };
+      }
       unlock_stats();
 
       pktfail = 0; /* reset fail state */
@@ -226,17 +226,17 @@ void *aldl_acq(void *aldl_in) {
       lock_stats();
       aldl->stats->failcounter = 0; /* reset failcounter */
       unlock_stats();
-    };
+    }
 
     /* check if lagtime exceeded, and set lag state. */
     #ifdef LAGCHECK
     if(aldl->comm->shutup_time > 0 &&
        get_elapsed_ms(lagtime) >= aldl->comm->shutup_time) {
       set_connstate(ALDL_LAGGY,aldl);
-    };
+    }
     #endif
 
-    }; /* end packet iterator */
+    } /* end packet iterator */
 
     /* all packets should be complete here */
 
@@ -249,9 +249,9 @@ void *aldl_acq(void *aldl_in) {
         aldl->ready = 1;
       } else {
         buffered++;
-      };
-    };
-  };
+      }
+    }
+  }
   return NULL;
 }
 

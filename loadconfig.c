@@ -136,7 +136,7 @@ char *load_config_root(dfile_t *config) {
   aldl->dataserver_config = configopt(config,"DATASERVER_CONFIG",NULL);
   /* return definition file path */
   return configopt_fatal(config,"DEFINITION"); /* path not stored ... */
-};
+}
 
 void load_config_a(dfile_t *config) {
   comm->checksum_enable = configopt_int(config,"CHECKSUM_ENABLE",0,1,1);;
@@ -177,17 +177,17 @@ void load_config_b(dfile_t *config) {
     #ifdef DEBUGCONFIG
     printf("loaded packet %i\n",x);
     #endif
-  };
+  }
   free(pktname);
 
   /* sanity checks for single packet mode */
   #ifndef ALDL_MULTIPACKET
   if(comm->packet[0].frequency == 0) {
     error(1,ERROR_CONFIG,"the only packet is disabled due to 0 frequency");
-  };
+  }
   if(comm->n_packets != 1) {
     error(1,ERROR_CONFIG,"this config requires a multipacket build");
-  };
+  }
   #endif
 }
 
@@ -200,7 +200,7 @@ void aldl_alloc_c() {
     printf("packet %i raw storage: %i bytes\n",x,comm->packet[x].length);
     #endif
     if(comm->packet[x].data == NULL) error(1,ERROR_MEMORY,"pkt data");
-  };
+  }
 
   /* storage for data definitions */
   aldl->def = smalloc(sizeof(aldl_define_t) * aldl->n_defs);
@@ -208,7 +208,7 @@ void aldl_alloc_c() {
   printf("aldl_define_t definition storage: %i bytes\n",
               (int)sizeof(aldl_define_t) * aldl->n_defs);
   #endif
-};
+}
 
 void load_config_c(dfile_t *config) {
   int x=0;
@@ -250,7 +250,7 @@ void load_config_c(dfile_t *config) {
                                                   0,32767,0);
       } else {
         error(1,ERROR_CONFIG,"invalid data type %s in def %i",tmp,x);
-      };
+      }
       d->uom=configopt(config,dconfig(configstr,"UOM",x),NULL);
       /* check for illegal chars in uom */
       if(d->uom != NULL) {
@@ -258,10 +258,10 @@ void load_config_c(dfile_t *config) {
         if(f != 0) {
           error(1,ERROR_CONFIG,"bad char %c in UOM of def %i",f,x);
         }
-      };
+      }
       d->size=configopt_int(config,dconfig(configstr,"SIZE",x),1,32,8);     
       /* FIXME no support for signed input type */
-    };
+    }
     d->alarm_low_enable=configopt_int(config,dconfig(configstr,
                         "ALARM_LOW_ENABLE",x),0,1,0);
     d->alarm_high_enable=configopt_int(config,dconfig(configstr,
@@ -280,14 +280,14 @@ void load_config_c(dfile_t *config) {
       if(faststrcmp(aldl->def[z].name,d->name) == 1) error(1,ERROR_CONFIG,
                     "duplicate name %s at id %i and %i",
                      d->name,x,z);
-    };
+    }
     d->description=configopt_fatal(config,dconfig(configstr,"DESC",x));
     d->log=configopt_int(config,dconfig(configstr,"LOG",x),0,1,0);
     d->display=configopt_int(config,dconfig(configstr,"DISPLAY",x),0,1,0);
     #ifdef DEBUGCONFIG
     printf("loaded definition %i\n",x);
     #endif
-  };
+  }
   free(configstr);
 }
 
@@ -295,13 +295,13 @@ char *configopt_fatal(dfile_t *config, char *str) {
   char *val = configopt(config,str,NULL);
   if(val == NULL) error(1,ERROR_CONFIG_MISSING,str);
   return val;
-};
+}
 
 char *configopt(dfile_t *config,char *str,char *def) {
   char *val = value_by_parameter(str, config);
   if(val == NULL) return def;
   return val;
-};
+}
 
 float configopt_float(dfile_t *config, char *str, float def) {
   char *in = configopt(config,str,NULL);
@@ -309,18 +309,18 @@ float configopt_float(dfile_t *config, char *str, float def) {
   if(in == NULL) {
     printf("caught default value for %s: %f\n",str,def);
     return def;
-  };
+  }
   #else
   if(in == NULL) return def;
   #endif
   float x = atof(in);
   return x;
-};
+}
 
 float configopt_float_fatal(dfile_t *config,char *str) {
   float x = atof(configopt_fatal(config,str));
   return x;
-};
+}
 
 int configopt_int(dfile_t *config,char *str, int min, int max, int def) {
   char *in = configopt(config,str,NULL);
@@ -328,7 +328,7 @@ int configopt_int(dfile_t *config,char *str, int min, int max, int def) {
   if(in == NULL) {
     printf("caught default value for %s: %i\n",str,def);
     return def;
-  };
+  }
   #else
   if(in == NULL) return def;
   #endif
@@ -336,14 +336,14 @@ int configopt_int(dfile_t *config,char *str, int min, int max, int def) {
   if(x < min || x > max) error(1,ERROR_CONFIG,
                   "%s must be between %i and %i",str,min,max);
   return x;
-};
+}
 
 int configopt_int_fatal(dfile_t *config,char *str, int min, int max) {
   int x = atoi(configopt_fatal(config,str));
   if(x < min || x > max) error(1,ERROR_CONFIG,
                   "%s must be between %i and %i",str,min,max);
   return x;
-};
+}
 
 byte configopt_byte(dfile_t *config,char *str, byte def) {
   char *in = configopt(config,str,NULL);
@@ -352,27 +352,27 @@ byte configopt_byte(dfile_t *config,char *str, byte def) {
     printf("caught default value for %s: ",str);
     printhexstring(&def,1);
     return def;
-  };
+  }
   #else
   if(in == NULL) return def;
   #endif
   return hextobyte(in);
-};
+}
 
 byte configopt_byte_fatal(dfile_t *config,char *str) {
   char *in = configopt_fatal(config,str);
   return hextobyte(in);
-};
+}
 
 char *pktconfig(char *buf, char *parameter, int n) {
   sprintf(buf,"P%i.%s",n,parameter);
   return buf;
-};
+}
 
 char *dconfig(char *buf, char *parameter, int n) {
   sprintf(buf,"D%i.%s",n,parameter);
   return buf;
-};
+}
 
 dfile_t *dfile_load(char *filename) {
   char *data = load_file(filename);
@@ -384,7 +384,7 @@ dfile_t *dfile_load(char *filename) {
   #endif
   free(data);
   return d; 
-};
+}
 
 void dfile_strip_quotes(dfile_t *d) {
   int x;
@@ -396,13 +396,13 @@ void dfile_strip_quotes(dfile_t *d) {
       while(*c != '"') {
          if(*c == EOF) {
            error(1,ERROR_CONFIG,"Unterminated quote in config file");
-         };
+         }
          c++;
-      };
+      }
       c[0] = 0;
-    };
-  };
-};
+    }
+  }
+}
 
 dfile_t *dfile(char *data) {
   /* allocate base structure */
@@ -433,10 +433,10 @@ dfile_t *dfile(char *data) {
             if(cx[1] == 0) error(1,ERROR_CONFIG,"Unterminated quote in config");
             if(cx == data + len) continue;
             cx++;
-          };
-        };
+          }
+        }
         cx++;
-      };
+      }
       cx[0] = 0; /* null end */
       cz = cx; /* rememeber end point */
       /* find starting point */
@@ -450,22 +450,22 @@ dfile_t *dfile(char *data) {
             if(cx == data) error(1,ERROR_CONFIG,"Unterminated quote in config"); 
             if(cx == data + len) continue;
             cx--;
-          };
-        };
+          }
+        }
         cx--;
         if(cx == data) { /* handle case of beginning of file */
           cx--;
           break;
-        };
-      };
+        }
+      }
       out->p[out->n] = cx + 1;
       out->n++;
       if(out->n == MAX_PARAMETERS) return out; /* out of space */
       c = cz;
-    };
-  };
+    }
+  }
   return out;
-};
+}
 
 /* reduce memory footprint */
 char *dfile_shrink(dfile_t *d) {
@@ -479,7 +479,7 @@ char *dfile_shrink(dfile_t *d) {
     ttl += strlen(d->p[x]);
     ttl += strlen(d->v[x]);
     ttl += 2; /* for null terminators */
-  };
+  }
   ttl++;
   /* move everything and update pointers */
   char *newdata = smalloc(ttl); /* new storage */
@@ -493,15 +493,15 @@ char *dfile_shrink(dfile_t *d) {
     strcpy(c,d->v[x]);
     d->v[x] = c;
     c += (strlen(c) + 1);
-  };
+  }
   return newdata;
-};
+}
 
 
 inline int is_whitespace(char ch) {
   if(ch == 0 || ch == ' ' || ch == '\n' || ch == '=') return 1;
   return 0;
-};
+}
 
 /* read file into memory */
 char *load_file(char *filename) {
@@ -514,30 +514,30 @@ char *load_file(char *filename) {
   if(flength == -1) {
     fclose(fdesc);
     return NULL;
-  };
+  }
   rewind(fdesc);
   char *buf = smalloc(sizeof(char) * ( flength + 1));
   if(fread(buf,1,flength,fdesc) != flength) {
     free(buf);
     fclose(fdesc);
     return NULL;
-  };
+  }
   fclose(fdesc);
   buf[flength] = 0;
   return buf;
-};
+}
 
 char *value_by_parameter(char *str, dfile_t *d) {
   int x;
   for(x=0;x<d->n;x++) {
     if(faststrcmp(str,d->p[x]) == 1) return d->v[x];
-  };
+  }
   return NULL;
-};
+}
 
 void print_config(dfile_t *d) {
   printf("config list has %i parsed options:-------------\n",d->n);
   int x;
   for(x=0;x<d->n;x++) printf("p(arameter):%s v(alue):%s\n",d->p[x],d->v[x]);
   printf("----------end config\n");
-};
+}

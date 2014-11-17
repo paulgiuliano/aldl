@@ -41,20 +41,20 @@ void error(errtype_t t, error_t code, char *str, ...) {
     vfprintf(stderr,str,arg);
     va_end(arg);
     fprintf(stderr,"\n");
-  };
+  }
   #ifndef ALL_ERRORS_FATAL
   if(t == EFATAL) {
   #endif
     fprintf(stderr,"This error is fatal.  Exiting...\n");
     main_exit();
   #ifndef ALL_ERRORS_FATAL
-  };
+  }
   #endif
-};
+}
 
 #ifdef RETARDED
 void retardptr(void *p, char *note) {
   error(1,ERROR_RETARD,"null pointer in %s");
-};
+}
 #endif
 

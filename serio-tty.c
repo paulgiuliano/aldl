@@ -46,7 +46,7 @@ int serial_init(char *port) {
   if(fd < 0) { /* failed to open port */ 
     error(EFATAL,ERROR_SERIAL,"Couldn't open file descriptor for device %s",
           port);
-  };
+  }
 
   tcgetattr(fd,&term_old); /* save old attr */
   bzero(&term_new,sizeof(term_new)); /* clear new struct */
@@ -54,7 +54,7 @@ int serial_init(char *port) {
   /* configure serial device here */
 
   return 1;
-};
+}
 
 void serial_purge() {
   /* purge all buffers */
@@ -80,8 +80,8 @@ int serial_read(byte *str, int len) {
 
 void serial_help_devs() {
   printf("The tty serial driver doesn't support this command.\n");
-};
+}
 
 int serial_get_status() {
   return 0;
-};
+}

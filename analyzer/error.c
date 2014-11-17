@@ -15,7 +15,7 @@ void err(char *str, ...) {
     vfprintf(stderr,str,arg);
     va_end(arg);
     fprintf(stderr,"\n");
-  };
+  }
   exit(1);
-};
+}
 

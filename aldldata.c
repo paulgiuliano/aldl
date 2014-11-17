@@ -74,37 +74,37 @@ void init_locks() {
     pthreaderr = pthread_mutex_init(&aldllock[x],NULL); 
     if(pthreaderr != 0) error(1,ERROR_LOCK,
          "error initializing lock %i, pthread error %i",x,pthreaderr);
-  };
-};
+  }
+}
 
 inline void set_lock(aldl_lock_t lock_number) {
   int rtval;
   rtval = pthread_mutex_lock(&aldllock[lock_number]);
   if(rtval != 0) error(1,ERROR_LOCK,
           "error setting lock %i, pthread error code %i",lock_number,rtval);
-};
+}
 
 inline void unset_lock(aldl_lock_t lock_number) {
   int rtval;
   rtval = pthread_mutex_unlock(&aldllock[lock_number]);
   if(rtval != 0) error(1,ERROR_LOCK,
           "error unsetting lock %i, pthread error code %i",lock_number,rtval);
-};
+}
 
 void lock_stats() {
   set_lock(LOCK_STATS);
-};
+}
 
 void unlock_stats() {
   unset_lock(LOCK_STATS);
-};
+}
 
 aldl_record_t *process_data(aldl_conf_t *aldl) {
   aldl_record_t *rec = aldl_create_record(aldl);
   aldl_fill_record(aldl,rec);
   link_record(rec,aldl);
   return rec;
-};
+}
 
 void link_record(aldl_record_t *rec, aldl_conf_t *aldl) {
   rec->next = NULL; /* terminate linked list */
@@ -113,7 +113,7 @@ void link_record(aldl_record_t *rec, aldl_conf_t *aldl) {
   aldl->r->next = rec; /* attach to linked list */
   aldl->r = rec; /* fix master link */
   unset_lock(LOCK_RECORDPTR);
-};
+}
 
 void aldl_data_init(aldl_conf_t *aldl) {
   aldl_alloc_pool(aldl);
@@ -125,7 +125,7 @@ void aldl_data_init(aldl_conf_t *aldl) {
   unset_lock(LOCK_RECORDPTR);
   firstrecordtime = get_time();
   comq = NULL; /* no records yet */
-};
+}
 
 aldl_record_t *aldl_create_record(aldl_conf_t *aldl) {
   /* get memory pool addresses */
@@ -137,7 +137,7 @@ aldl_record_t *aldl_create_record(aldl_conf_t *aldl) {
     indexbuffer = 0; /* return to beginning */
   } else {
     indexbuffer++;
-  };
+  }
 
   /* timestamp record */
   rec->t = get_elapsed_ms(firstrecordtime);
@@ -148,16 +148,16 @@ aldl_record_t *aldl_create_record(aldl_conf_t *aldl) {
   #endif
 
   return rec;
-};
+}
 
 aldl_record_t *aldl_fill_record(aldl_conf_t *aldl, aldl_record_t *rec) {
   /* process packet data */
   int def_n;
   for(def_n=0;def_n<aldl->n_defs;def_n++) {
     aldl_parse_def(aldl,rec,def_n);
-  };
+  }
   return rec;
-};
+}
 
 aldl_data_t *aldl_parse_def(aldl_conf_t *aldl, aldl_record_t *r, int n) {
   /* check for out of range */
@@ -173,7 +173,7 @@ aldl_data_t *aldl_parse_def(aldl_conf_t *aldl, aldl_record_t *r, int n) {
      load time ... */
   for(id=0; id < aldl->comm->n_packets; id++) {
     if(aldl->comm->packet[id].id == def->packet) break;
-  };
+  }
   #endif
 
   aldl_packetdef_t *pkt = &aldl->comm->packet[id]; /* ptr to packet */
@@ -196,7 +196,7 @@ aldl_data_t *aldl_parse_def(aldl_conf_t *aldl, aldl_record_t *r, int n) {
     case 8: /* direct conversion */
     default: /* no other types supported, default to 8 bit */
       x = (unsigned int)*data;
-  };
+  }
 
   /* apply any math or whatever and output as desired type */
   switch(def->type) {
@@ -204,34 +204,34 @@ aldl_data_t *aldl_parse_def(aldl_conf_t *aldl, aldl_record_t *r, int n) {
       out->i = ( (int)x * def->multiplier.i ) + def->adder.i;
       if(aldl->minmax == 1) {
         out->i = clamp_int(def->min.i,def->max.i,out->i);
-      };
+      }
       break;
     case ALDL_FLOAT:
       out->f = ( (float)x * def->multiplier.f ) + def->adder.f;
       if(aldl->minmax == 1) {
         out->f = clamp_float(def->min.f,def->max.f,out->f); 
-      };
+      }
       break;
     case ALDL_BOOL:
       if(aldl->comm->byteorder == 1) { /* deal with MSB or LSB */
         out->i = getbit(x,(7 - def->binary),def->invert);
       } else {
         out->i = getbit(x,def->binary,def->invert);
-      };
+      }
       break;
     default:
       error(1,ERROR_RANGE,"invalid type spec: %i",def->type);
-  };
+  }
 
   return out;
-};
+}
 
 aldl_state_t get_connstate(aldl_conf_t *aldl) {
   set_lock(LOCK_CONNSTATE);
   aldl_state_t st = aldl->state;
   unset_lock(LOCK_CONNSTATE);
   return st;
-};
+}
 
 void set_connstate(aldl_state_t s, aldl_conf_t *aldl) {
   set_lock(LOCK_CONNSTATE);
@@ -240,7 +240,7 @@ void set_connstate(aldl_state_t s, aldl_conf_t *aldl) {
   #endif
   aldl->state = s;
   unset_lock(LOCK_CONNSTATE);
-};
+}
 
 aldl_record_t *newest_record(aldl_conf_t *aldl) {
   aldl_record_t *rec = NULL;
@@ -248,7 +248,7 @@ aldl_record_t *newest_record(aldl_conf_t *aldl) {
   rec = aldl->r; 
   unset_lock(LOCK_RECORDPTR);
   return rec;
-};
+}
 
 aldl_record_t *newest_record_wait(aldl_conf_t *aldl, aldl_record_t *rec) {
   aldl_record_t *next = NULL;
@@ -262,9 +262,9 @@ aldl_record_t *newest_record_wait(aldl_conf_t *aldl, aldl_record_t *rec) {
       #ifndef AGGRESSIVE
       usleep(500);
       #endif
-    };
-  }; 
-};
+    }
+  } 
+}
 
 aldl_record_t *next_record_wait(aldl_conf_t *aldl, aldl_record_t *rec) {
   aldl_record_t *next = NULL;
@@ -274,35 +274,35 @@ aldl_record_t *next_record_wait(aldl_conf_t *aldl, aldl_record_t *rec) {
     #ifndef AGGRESSIVE
     usleep(500); /* throttling ... */
     #endif
-  };
+  }
   return next;
-};
+}
 
 aldl_record_t *next_record_waitf(aldl_conf_t *aldl, aldl_record_t *rec) {
   aldl_record_t *next = NULL;
   while((next = next_record_wait(aldl,rec)) == NULL) usleep(500);
   return next;
-};
+}
 
 aldl_record_t *newest_record_waitf(aldl_conf_t *aldl, aldl_record_t *rec) {
   aldl_record_t *next = NULL;
   while((next = newest_record_wait(aldl,rec)) == NULL) usleep(500);
   return next;
-};
+}
 
 aldl_record_t *next_record(aldl_record_t *rec) {
   #ifdef DEBUGSTRUCT
   /* check for underrun ... */
   if(rec->prev == NULL) {
      error(1,ERROR_BUFFER,"underrun in record retrieve %p",rec);
-  };
+  }
   #endif
   aldl_record_t *next;
   set_lock(LOCK_RECORDPTR);
   next = rec->next;
   unset_lock(LOCK_RECORDPTR);
   return next;
-};
+}
 
 void pause_until_connected(aldl_conf_t *aldl) {
   while(get_connstate(aldl) > 10) {
@@ -311,8 +311,8 @@ void pause_until_connected(aldl_conf_t *aldl) {
     #else
       msleep(100);
     #endif
-  };
-};
+  }
+}
 
 void pause_until_buffered(aldl_conf_t *aldl) {
   while(aldl->ready ==0) {
@@ -321,16 +321,16 @@ void pause_until_buffered(aldl_conf_t *aldl) {
     #else
       msleep(100); 
     #endif
-  };
-};
+  }
+}
 
 int get_index_by_name(aldl_conf_t *aldl, char *name) {
   int x;
   for(x=0;x<aldl->n_defs;x++) {
     if(faststrcmp(name,aldl->def[x].name) == 1) return x;
-  };
+  }
   return -1; /* not found */
-};
+}
 
 char *get_state_string(aldl_state_t s) {
   switch(s) {
@@ -354,8 +354,8 @@ char *get_state_string(aldl_state_t s) {
       return "Serial ERR";
     default:
       return "Undefined";
-  };
-};
+  }
+}
 
 void aldl_alloc_pool(aldl_conf_t *aldl) {
   /* get sizes */
@@ -373,7 +373,7 @@ void aldl_alloc_pool(aldl_conf_t *aldl) {
           aldl->bufsize, (unsigned int)databuffer_size/1024,
          (unsigned int)recordbuffer_size/1024);
   #endif
-};
+}
 
 void aldl_add_command(byte *command, byte length, int delay) {
   if(command == NULL) return;
@@ -386,7 +386,7 @@ void aldl_add_command(byte *command, byte length, int delay) {
   n->command = smalloc(sizeof(char) * length);
   int x; for(x=0;x<length;x++) { /* copy command */
     n->command[x] = command[x];
-  };
+  }
   n->next = NULL;
 
   /* link in new command */
@@ -397,19 +397,19 @@ void aldl_add_command(byte *command, byte length, int delay) {
     aldl_comq_t *e = comq; /* end of linked list */
     while(e->next != NULL) e = e->next; /* seek end */
     e->next = n; 
-  }; 
+  } 
   unset_lock(LOCK_COMQ);
-};
+}
 
 aldl_comq_t *aldl_get_command() {
   set_lock(LOCK_COMQ);
   if(comq == NULL) {
     unset_lock(LOCK_COMQ);
     return NULL; /* no command available */
-  };
+  }
   aldl_comq_t *c = comq;
   comq = c->next; /* advance to next command */
   unset_lock(LOCK_COMQ);
   return c;
   /* WARNING you need to free this after you're done with it ... */
-};
+}

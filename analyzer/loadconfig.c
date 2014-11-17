@@ -23,13 +23,13 @@ char *configopt_fatal(dfile_t *config, char *str) {
   char *val = configopt(config,str,NULL);
   if(val == NULL) err("Missing config option: %s",str);
   return val;
-};
+}
 
 char *configopt(dfile_t *config,char *str,char *def) {
   char *val = value_by_parameter(str, config);
   if(val == NULL) return def;
   return val;
-};
+}
 
 float configopt_float(dfile_t *config, char *str, float def) {
   char *in = configopt(config,str,NULL);
@@ -37,18 +37,18 @@ float configopt_float(dfile_t *config, char *str, float def) {
   if(in == NULL) {
     printf("caught default value for %s: %f\n",str,def);
     return def;
-  };
+  }
   #else
   if(in == NULL) return def;
   #endif
   float x = atof(in);
   return x;
-};
+}
 
 float configopt_float_fatal(dfile_t *config,char *str) {
   float x = atof(configopt_fatal(config,str));
   return x;
-};
+}
 
 int configopt_int(dfile_t *config,char *str, int min, int max, int def) {
   char *in = configopt(config,str,NULL);
@@ -56,7 +56,7 @@ int configopt_int(dfile_t *config,char *str, int min, int max, int def) {
   if(in == NULL) {
     printf("caught default value for %s: %i\n",str,def);
     return def;
-  };
+  }
   #else
   if(in == NULL) return def;
   #endif
@@ -64,19 +64,19 @@ int configopt_int(dfile_t *config,char *str, int min, int max, int def) {
   if(x < min || x > max) err("Config error: %s must be between %i and %i",
                        str,min,max);
   return x;
-};
+}
 
 int configopt_int_fatal(dfile_t *config,char *str, int min, int max) {
   int x = atoi(configopt_fatal(config,str));
   if(x < min || x > max) err("Config error: %s must be between %i and %i",
                        str,min,max);
   return x;
-};
+}
 
 char *dconfig(char *buf, char *parameter, int n) {
   sprintf(buf,"D%i.%s",n,parameter);
   return buf;
-};
+}
 
 dfile_t *dfile_load(char *filename) {
   char *data = load_file(filename);
@@ -88,7 +88,7 @@ dfile_t *dfile_load(char *filename) {
   #endif
   free(data);
   return d; 
-};
+}
 
 void dfile_strip_quotes(dfile_t *d) {
   int x;
@@ -99,9 +99,9 @@ void dfile_strip_quotes(dfile_t *d) {
       c = d->v[x];
       while(*c != '"') c++;
       c[0] = 0;
-    };
-  };
-};
+    }
+  }
+}
 
 dfile_t *dfile(char *data) {
   /* allocate base structure */
@@ -131,10 +131,10 @@ dfile_t *dfile(char *data) {
             if(cx[1] == 0) err("Unterminated quote in config");
             if(cx == data + len) continue;
             cx++;
-          };
-        };
+          }
+        }
         cx++;
-      };
+      }
       cx[0] = 0; /* null end */
       cz = cx; /* rememeber end point */
       /* find starting point */
@@ -147,22 +147,22 @@ dfile_t *dfile(char *data) {
             if(cx == data) err("Unterminated quote in config");
             if(cx == data + len) continue;
             cx--;
-          };
-        };
+          }
+        }
         cx--;
         if(cx == data) { /* handle case of beginning of file */
           cx--;
           break;
-        };
-      };
+        }
+      }
       out->p[out->n] = cx + 1;
       out->n++;
       if(out->n == MAX_PARAMETERS) return out; /* out of space */
       c = cz;
-    };
-  };
+    }
+  }
   return out;
-};
+}
 
 /* reduce memory footprint */
 char *dfile_shrink(dfile_t *d) {
@@ -176,7 +176,7 @@ char *dfile_shrink(dfile_t *d) {
     ttl += strlen(d->p[x]);
     ttl += strlen(d->v[x]);
     ttl += 2; /* for null terminators */
-  };
+  }
   ttl++;
   /* move everything and update pointers */
   char *newdata = malloc(ttl); /* new storage */
@@ -190,15 +190,15 @@ char *dfile_shrink(dfile_t *d) {
     strcpy(c,d->v[x]);
     d->v[x] = c;
     c += (strlen(c) + 1);
-  };
+  }
   return newdata;
-};
+}
 
 
 inline int is_whitespace(char ch) {
   if(ch == 0 || ch == ' ' || ch == '\n') return 1;
   return 0;
-};
+}
 
 char *load_file(char *filename) {
   FILE *fdesc;
@@ -210,7 +210,7 @@ char *load_file(char *filename) {
   if(flength == -1) {
     fclose(fdesc);
     return NULL;
-  };
+  }
   rewind(fdesc);
   char *buf = malloc(sizeof(char) * ( flength + 1));
   /* if file too big for memory, or malloc failed */
@@ -218,26 +218,26 @@ char *load_file(char *filename) {
     free(buf);
     fclose(fdesc);
     return NULL;
-  };
+  }
   fclose(fdesc);
   buf[flength] = 0;
   return buf;
-};
+}
 
 char *value_by_parameter(char *str, dfile_t *d) {
   int x;
   for(x=0;x<d->n;x++) {
     if(faststrcmp(str,d->p[x]) == 1) return d->v[x];
-  };
+  }
   return NULL;
-};
+}
 
 void print_config(dfile_t *d) {
   printf("config list has %i parsed options:-------------\n",d->n);
   int x;
   for(x=0;x<d->n;x++) printf("p(arameter):%s v(alue):%s\n",d->p[x],d->v[x]);
   printf("----------end config\n");
-};
+}
 
 int faststrcmp(char *a, char *b) {
   int x = 0;
@@ -248,9 +248,9 @@ int faststrcmp(char *a, char *b) {
         return 1;
       } else {
         return 0;
-      };
-    };
-  };
+      }
+    }
+  }
   return 0;
-};
+}
 

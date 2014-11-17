@@ -50,10 +50,10 @@ void gen_pkt() {
     #endif
     for(x=0;x<=DUMMY_CORRUPTION_AMOUNT;x++) {
       databuff[(byte)rand() % 60] = ( (byte)rand() % 256 ) - 1;
-    };
-  };
+    }
+  }
   #endif
-};
+}
 
 int serial_init(char *port) {
   #ifdef SERIAL_VERBOSE
@@ -62,7 +62,7 @@ int serial_init(char *port) {
   txmode=0;
   databuff=malloc(64);
   return 1;
-};
+}
 
 void serial_purge() {
   #ifdef SERIAL_VERBOSE
@@ -138,16 +138,16 @@ inline int serial_read(byte *str, int len) {
     int x;
     for(x=0;x<len;x++) {
       str[x] = databuff[x]; 
-    };
+    }
     return len;
-  };
+  }
   return 0;
 }
 
 void serial_help_devs() {
   error(1,ERROR_GENERAL,"this serial driver has no devices......");
-};
+}
 
 int serial_get_status() {
   return 1;
-};
+}
