@@ -8,12 +8,12 @@ LIBS= -lpthread -lrt -lncurses
 CONFIGDIR= /etc/aldl
 LOGDIR= /var/log/aldl
 BINDIR= /usr/local/bin
-BINARIES= aldl-ftdi aldl-tty aldl-dummy eeflash-ftdi
+BINARIES= aldl-ftdi aldl-tty aldl-dummy
 
 .PHONY: clean install stats modules_
 
 # not building tty driver by default yet
-all: aldl-ftdi eeflash-ftdi aldl-dummy analyzer_
+all: aldl-ftdi aldl-dummy analyzer_
 	@echo
 	@echo '*********************************************************'
 	@echo ' Run the following as root to install the binaries and'
@@ -56,9 +56,6 @@ aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
 	@echo ' Debian users can try the debian-config.sh script. '
 	@echo '***************************************************'
 	@echo
-
-eeflash-ftdi: eeflash.c config.h aldl-io.h aldl-types.h $(OBJS)
-	gcc $(CFLAGS) $(LIBS) -lftdi eeflash.c -o eeflash-ftdi $(OBJS) serio-ftdi.o
 
 aldl-tty: main.c serio-tty.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
 	gcc $(CFLAGS) $(LIBS) main.c -o aldl-tty $(OBJS) $(MODULES) serio-tty.o
