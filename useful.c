@@ -32,43 +32,6 @@ unsigned long get_elapsed_ms(timespec_t timestamp) {
   return ( seconds * 1000 ) + milliseconds;
 }
 
-inline int faststrcmp(char *a, char *b) {
-  #ifdef RETARDED
-  retardptr(a,"faststrcmp a");
-  retardptr(b,"faststrcmp b");
-  #endif
-  int x = 0;
-  while(a[x] == b[x]) {
-    x++;
-    if(a[x] == 0 || b[x] == 0) {
-      if(a[x] == 0 && b[x] == 0) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }
-  }
-  return 0;
-}
-
-char faststrcmp_list(char *str, char *list) {
-  #ifdef RETARDED
-  retardptr(str,"faststrcmp str");
-  retardptr(list,"faststrcmp list");
-  #endif
-  int x = 0;
-  int y = 0;
-  while(list[x] != 0) {
-    y = 0;
-    while(str[y] != 0) {
-      if(str[y] == list[x]) return list[x];
-      y++;
-    }
-    x++;
-  }
-  return 0;
-}
-
 byte checksum_generate(byte *buf, int len) {
   #ifdef RETARDED
   retardptr(buf,"checksum buf");
@@ -121,14 +84,3 @@ void *smalloc(size_t size) {
 }
 #endif
 
-int clamp_int(int min, int max, int in) {
-  if(in > max) return max;
-  if(in < min) return min;
-  return in;
-}
-
-float clamp_float(float min, float max, float in) {
-  if(in > max) return max;
-  if(in < min) return min;
-  return in;
-}
