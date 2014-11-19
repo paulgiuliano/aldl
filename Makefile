@@ -13,7 +13,7 @@ BINARIES= aldl-ftdi aldl-tty aldl-dummy
 .PHONY: clean install stats rflib_ modules_
 
 # not building tty driver by default yet
-all: aldl-ftdi aldl-dummy analyzer_
+all: aldl-ftdi aldl-tty aldl-dummy analyzer_
 	@echo
 	@echo '*********************************************************'
 	@echo ' Run the following as root to install the binaries and'
@@ -58,6 +58,8 @@ aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ rflib_ $
 	@echo
 
 aldl-tty: main.c serio-tty.o config.h aldl-io.h aldl-types.h modules_ rflib_ $(OBJS)
+	@echo 'The TTY serial driver is unfinished,'
+	@echo 'Using it will simply generate an error.'
 	gcc $(CFLAGS) $(LIBS) main.c -o aldl-tty $(OBJS) $(MODULES) serio-tty.o
 
 aldl-dummy: main.c serio-dummy.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
