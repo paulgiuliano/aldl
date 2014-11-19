@@ -14,6 +14,8 @@
 #define MAP_GRIDSIZE ( GRID_MAP_RANGE / GRID_MAP_INTERVAL )
 #define MAF_GRIDSIZE ( GRID_MAF_RANGE / GRID_MAF_INTERVAL )
 
+dfile_t *dconf; /* global configuration */
+
 /* grid cell, float */
 typedef struct _anl_fcell_t {
   float low,high;
@@ -99,6 +101,8 @@ float csvfloat(char *line, int f);
 void prep_anl();
 
 void anl_load_conf(char *filename);
+int anl_get_col(char *copt, char *log);
+void anl_reset_columns(char *log);
 
 void log_blm(char *line);
 void log_knock(char *line);
@@ -143,6 +147,7 @@ int main(int argc, char **argv) {
     if(log == NULL) {
       printf("Couldn't load file, skipping.\n");
     } else {
+      anl_reset_columns(log);
       parse_file(log);
       free(log);
     }
@@ -531,13 +536,13 @@ int verify_line(char *line) {
   if(line == NULL) return 0;
 
   /* check for too many columns */
-  if(field_start(line,anl_conf->n_cols) == NULL) {
+  if(field_start(line,anl_conf->n_cols - 1) == NULL) {
     stats->badlines++;
     return 0;
   }
 
   /* check for not enough columns */
-  if(field_start(line,anl_conf->n_cols + 1) != NULL) {
+  if(field_start(line,anl_conf->n_cols) != NULL) {
     stats->badlines++;
     return 0;
   }
@@ -554,12 +559,60 @@ float csvfloat(char *line, int f) {
   return csv_get_float(field_start(line,f));
 }
 
+int anl_get_col(char *copt, char *log) {
+  char *cname = configopt_fatal(dconf,copt); /* get col name from conf file */
+  char *line = line_start(log,0); /* should always be first line ... */  
+  char *in;
+  int x = 0; /* column index */
+  int y; /* slicer */
+  for(x=0;x<anl_conf->n_cols;x++) {
+    in = csv_get_string(field_start(line,x)); 
+    y = 0; 
+    /* fix terminator (to ignore bracketed suffix) */
+    while(in[y] != 0 && in[y] != '(') y++; in[y] = 0;
+    if(faststrcmp(cname,in) == 1) {
+      printf("FOUND COLUMN %i for %s\n",x,cname);
+      return x; /* found column */ 
+    };
+    free(in);
+  }
+  err("Couldn't find column for %s, named %s",copt,cname);
+  return 0;
+}
+
+void anl_reset_columns(char *log) {
+  /* get number of columns */
+  char *line = line_start(log,0);
+  int x = 0;
+  while(field_start(line,x) != NULL) x++;
+  anl_conf->n_cols = x;
+  printf("DETERMINED N COLS = %i\n",x);
+  /* get column numbers */
+  if(anl_conf->blm_on == 1) {
+    anl_conf->col_lblm = anl_get_col("COL_LBLM",log);
+    anl_conf->col_cell = anl_get_col("COL_CELL",log);
+    anl_conf->col_rblm = anl_get_col("COL_RBLM",log);
+  } 
+  if(anl_conf->knock_on == 1) {
+    anl_conf->col_knock = anl_get_col("COL_KNOCK",log);
+  }
+  if(anl_conf->wb_on == 1) {
+    anl_conf->col_wb = anl_get_col("COL_WB",log);
+  }
+  anl_conf->col_timestamp = anl_get_col("COL_TIMESTAMP",log);
+  anl_conf->col_rpm = anl_get_col("COL_RPM",log);
+  anl_conf->col_temp = anl_get_col("COL_TEMP",log);
+  anl_conf->col_map = anl_get_col("COL_MAP",log);
+  anl_conf->col_maf = anl_get_col("COL_MAF",log);
+  anl_conf->col_cl = anl_get_col("COL_CL",log);
+  anl_conf->col_blm = anl_get_col("COL_BLM",log);
+  anl_conf->col_wot = anl_get_col("COL_WOT",log);
+}
+
 void anl_load_conf(char *filename) {
   anl_conf = malloc(sizeof(anl_conf_t));
-  dfile_t *dconf;
   dconf = dfile_load(filename);
   if(dconf == NULL) err("Couldn't load config %s",filename);
-  anl_conf->n_cols = configopt_int_fatal(dconf,"N_COLS",1,500);
   anl_conf->valid_min_time = configopt_int_fatal(dconf,"MIN_TIME",0,999999);
   anl_conf->valid_min_temp  = configopt_int_fatal(dconf,"MIN_TEMP",-20,99999);
   anl_conf->blm_on = configopt_int_fatal(dconf,"BLM_ON",0,1);
@@ -568,30 +621,17 @@ void anl_load_conf(char *filename) {
     anl_conf->blm_n_cells = configopt_int_fatal(dconf,"N_CELLS",1,255);
     anl_conf->blm_min_count = configopt_int_fatal(dconf,"BLM_MIN_COUNTS",
                                   1,10000);
-    anl_conf->col_lblm = configopt_int_fatal(dconf,"COL_LBLM",0,500);
-    anl_conf->col_cell = configopt_int_fatal(dconf,"COL_CELL",0,500);
-    anl_conf->col_rblm = configopt_int_fatal(dconf,"COL_RBLM",0,500);
   }
   if(anl_conf->knock_on == 1) {
-    anl_conf->col_knock = configopt_int_fatal(dconf,"COL_KNOCK",0,500);
     anl_conf->min_knock = configopt_int_fatal(dconf,"KNOCK_MIN",1,65535);
   }
   anl_conf->wb_on = configopt_int_fatal(dconf,"WB_ON",0,1);
   if(anl_conf->wb_on == 1) {
-    anl_conf->col_wb = configopt_int_fatal(dconf,"COL_WB",0,500);
     anl_conf->wb_min = configopt_float_fatal(dconf,"WB_MIN");
     anl_conf->wb_max = configopt_float_fatal(dconf,"WB_MAX");
     anl_conf->wb_counts = configopt_int_fatal(dconf,"WB_MIN_COUNTS",1,65535);
     anl_conf->wb_comp = configopt_float(dconf,"WB_COMP",0);
   }
-  anl_conf->col_timestamp = configopt_int_fatal(dconf,"COL_TIMESTAMP",0,500);
-  anl_conf->col_rpm = configopt_int_fatal(dconf,"COL_RPM",0,500);
-  anl_conf->col_temp = configopt_int_fatal(dconf,"COL_TEMP",0,500);
-  anl_conf->col_map = configopt_int_fatal(dconf,"COL_MAP",0,500);
-  anl_conf->col_maf = configopt_int_fatal(dconf,"COL_MAF",0,500);
-  anl_conf->col_cl = configopt_int_fatal(dconf,"COL_CL",0,500);
-  anl_conf->col_blm = configopt_int_fatal(dconf,"COL_BLM",0,500);
-  anl_conf->col_wot = configopt_int_fatal(dconf,"COL_WOT",0,500);
 }
 
 int rpm_cell_offset(int value) {
