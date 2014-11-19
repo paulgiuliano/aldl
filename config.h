@@ -16,11 +16,6 @@
 /* TODO need to make an override on command line option in main.c */
 #define ROOT_CONFIG_FILE "/etc/aldl/aldl.conf"
 
-/* this compacts the configuration data after parsing it.  there should be no
-   reason to undefine it, unless initial load speed is more important than
-   memory use. */
-#define REDUCE_CONFIG_MEMORY
-
 /* ----------- DEBUG OUTPUT --------------------------*/
 
 /* the debug master switch, enables all available debugging and verbosity
