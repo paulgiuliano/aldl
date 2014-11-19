@@ -570,10 +570,7 @@ int anl_get_col(char *copt, char *log) {
     y = 0; 
     /* fix terminator (to ignore bracketed suffix) */
     while(in[y] != 0 && in[y] != '(') y++; in[y] = 0;
-    if(faststrcmp(cname,in) == 1) {
-      printf("FOUND COLUMN %i for %s\n",x,cname);
-      return x; /* found column */ 
-    };
+    if(faststrcmp(cname,in) == 1) return x; /* found column */
     free(in);
   }
   err("Couldn't find column for %s, named %s",copt,cname);
@@ -586,7 +583,6 @@ void anl_reset_columns(char *log) {
   int x = 0;
   while(field_start(line,x) != NULL) x++;
   anl_conf->n_cols = x;
-  printf("DETERMINED N COLS = %i\n",x);
   /* get column numbers */
   if(anl_conf->blm_on == 1) {
     anl_conf->col_lblm = anl_get_col("COL_LBLM",log);
