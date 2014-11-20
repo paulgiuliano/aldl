@@ -429,18 +429,23 @@ void print_results_blm() {
 /************* AFR ANALYZER ******************************/
 
 void log_afr(char *line) {
-  float afr;
+  float afr; /* extracted AFR */
   
-  /* thresholds */
+  /* shortcuts */
+  int wb = anl_conf->wb_on;
+  int sd = anl_conf->sd_enable;
+
+  /* global thresholds */
   if(csvfloat(line,anl_conf->col_temp) < anl_conf->valid_min_temp) return;
   if(csvint(line,anl_conf->col_timestamp) < anl_conf->valid_min_time) return;
 
-  if(anl_conf->wb_on == 1) {
+  if(wb == 1) {
     /* get wb value */
     afr = csvfloat(line,anl_conf->col_wb) - anl_conf->wb_comp;
+    /* reject out-of-band */
     if(afr < anl_conf->wb_min || afr > anl_conf->wb_max) return;
   } else { /* use narrowband */
-    if(csvint(line,anl_conf->col_cl) == 0) return;
+    if(csvint(line,anl_conf->col_cl) == 0) return; /* reject non-cl */
     /* avg of left and right blm */
     afr = ((csvfloat(line,anl_conf->col_lblm) +
             csvfloat(line,anl_conf->col_rblm)) / 2);
@@ -459,7 +464,7 @@ void log_afr(char *line) {
     if(csvint(line,anl_conf->col_cell) == 17) return;
     #endif
 
-    if(anl_conf->sd_enable == 1) {
+    if(sd == 1) {
       /* ve analysis */
       int rpmcell = rpm_cell_offset(csvfloat(line,anl_conf->col_rpm));
       int mapcell = map_cell_offset(csvfloat(line,anl_conf->col_map));
@@ -472,7 +477,7 @@ void log_afr(char *line) {
       anl_afrmaf->t[mafcell].avg += afr;
       anl_afrmaf->t[mafcell].count++;
     }
-  } else if(anl_conf->wb_on == 1) { /* analyze wot record */
+  } else if(wb == 1) { /* analyze wot record */
     int rpmcell = rpm_cell_offset(csvfloat(line,anl_conf->col_rpm));
     anl_wbwot->t[rpmcell].avg += afr;
     anl_wbwot->t[rpmcell].count++;
