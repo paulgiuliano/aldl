@@ -4,6 +4,9 @@ this is a program designed to manage aldl datastreams from the 8192 baud series
 of OBD-I GM ECMs under gnu/linux based operating systems, but best tested with
 EE mask LT1 ecms.
 
+it also provides a data analysis program to assist in using massive amounts of
+collected data for tuning.
+
 see http://fbodytech.com/ for a more detailed installation tutorial, including
 some raspberry pi based instructions.
 
