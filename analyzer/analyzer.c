@@ -555,9 +555,13 @@ void print_results_afr() {
       printf(" %3i - %3i ",mafrow * GRID_MAF_INTERVAL,
           GRID_MAF_INTERVAL * (mafrow +1));
       if(anl_afrmaf->t[mafrow].count <= anl_conf->afr_counts) {
-        printf("   -----");
+        printf("   ----   -----");
       } else {
-        printf("   %4.1f",anl_afrmaf->t[mafrow].avg);
+        if(wb == 1) {
+          printf("   %3.1f",anl_afrmaf->t[mafrow].avg);
+        } else {
+          printf("   %4.0f",anl_afrmaf->t[mafrow].avg);
+        }
         if(anl_conf->wb_on == 0) { /* print percentage */
           printf("   %1.3f",anl_afrmaf->t[mafrow].avg / 128);
         }
