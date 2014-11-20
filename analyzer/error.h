@@ -1,2 +1,0 @@
-
-void err(char *str, ...);

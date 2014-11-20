@@ -5,14 +5,11 @@ CFLAGS= -g -Wall
 
 all: aldl-analyzer
 
-aldl-analyzer: analyzer.c csv.o error.o loadconfig.o config.h rflib_
-	gcc $(CFLAGS) -o aldl-analyzer analyzer.c csv.o loadconfig.o error.o ../rflib/rflib.o
+aldl-analyzer: analyzer.c csv.o loadconfig.o config.h rflib_
+	gcc $(CFLAGS) -o aldl-analyzer analyzer.c csv.o loadconfig.o ../rflib/rflib.o
 
 csv.o: csv.c csv.h config.h rflib_
 	gcc $(CFLAGS) -c csv.c
-
-error.o: error.c error.h config.h
-	gcc $(CFLAGS) -c error.c
 
 loadconfig.o: loadconfig.c loadconfig.h config.h
 	gcc $(CFLAGS) -c loadconfig.c
@@ -26,6 +23,7 @@ install: aldl-analyzer analyzer.conf
 
 clean:
 	rm -f aldl-analyzer *.o
+	cd ../rflib ; make clean ; cd ../analyzer
 
 stats:
 	wc -l *.c *.h */*.c */*.h
