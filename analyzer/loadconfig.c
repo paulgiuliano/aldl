@@ -8,6 +8,7 @@
 #include "config.h"
 #include "error.h"
 #include "loadconfig.h"
+#include "../rflib/rflib.h"
 
 /* This is a stripped down and portable version of ../loadconfig.c,
    it may be a bit further behind, though. */
@@ -225,7 +226,7 @@ char *load_file(char *filename) {
 char *value_by_parameter(char *str, dfile_t *d) {
   int x;
   for(x=0;x<d->n;x++) {
-    if(faststrcmp(str,d->p[x]) == 1) return d->v[x];
+    if(rf_strcmp(str,d->p[x]) == 1) return d->v[x];
   }
   return NULL;
 }
@@ -235,20 +236,5 @@ void print_config(dfile_t *d) {
   int x;
   for(x=0;x<d->n;x++) printf("p(arameter):%s v(alue):%s\n",d->p[x],d->v[x]);
   printf("----------end config\n");
-}
-
-int faststrcmp(char *a, char *b) {
-  int x = 0;
-  while(a[x] == b[x]) {
-    x++;
-    if(a[x] == 0 || b[x] == 0) {
-      if(a[x] == 0 && b[x] == 0) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }
-  }
-  return 0;
 }
 

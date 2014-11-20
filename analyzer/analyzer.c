@@ -9,6 +9,7 @@
 #include "config.h"
 #include "loadconfig.h"
 #include "error.h"
+#include "../rflib/rflib.h"
 
 #define RPM_GRIDSIZE ( GRID_RPM_RANGE / GRID_RPM_INTERVAL )
 #define MAP_GRIDSIZE ( GRID_MAP_RANGE / GRID_MAP_INTERVAL )
@@ -619,7 +620,7 @@ int anl_get_col(char *copt, char *log) {
     y = 0; 
     /* fix terminator (to ignore bracketed suffix) */
     while(in[y] != 0 && in[y] != '(') y++; in[y] = 0;
-    if(faststrcmp(cname,in) == 1) {
+    if(rf_strcmp(cname,in) == 1) {
       return x; /* found column */
     }
     free(in);
