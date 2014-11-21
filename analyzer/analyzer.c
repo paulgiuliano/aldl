@@ -638,7 +638,7 @@ int anl_get_col(char *copt, char *log) {
     }
     free(in);
   }
-  rf_err("Couldn't find column for %s, named %s",copt,cname);
+  rf_err("Couldn't find column for %s, named %s\n",copt,cname);
   return 0;
 }
 
