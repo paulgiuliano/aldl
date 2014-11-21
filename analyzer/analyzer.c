@@ -306,7 +306,11 @@ void print_results_knock() {
     printf("%4i\n ",rpmrow * GRID_RPM_INTERVAL);
     printf("   ");
     for(maprow=0;maprow<MAP_GRIDSIZE;maprow++) {
-      printf(" %4i ",anl_knock->t[rpmrow][maprow]);
+      if(anl_knock->t[rpmrow][maprow] > 0) {
+        printf(" %4i ",anl_knock->t[rpmrow][maprow]);
+      } else {
+        printf(" ---- ");
+      }
     }
     printf("\n");
   }
