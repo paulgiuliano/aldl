@@ -32,7 +32,7 @@ install: aldl-ftdi aldl-dummy analyzer_
 	@echo 'Copying example configs, will not overwrite...'
 	cp -nv ./config-examples/* $(CONFIGDIR)/
 	@echo 'Installing optional analyzer...'
-	cd analyzer ; make install ; cd ..
+	make -C analyzer install
 	@echo
 	@echo '*******************************************************'
 	@echo ' No automatic updates of configs are done.  Please see'
@@ -78,13 +78,13 @@ error.o: error.c error.h config.h aldl-types.h
 	gcc $(CFLAGS) -c error.c -o error.o
 
 modules_:
-	cd modules ; make ; cd ..
+	+make -C modules
 
 analyzer_:
-	cd analyzer ; make ; cd ..
+	+make -C analyzer
 
 rflib_:
-	cd rflib ; make ; cd ..
+	+make -C rflib
 
 serio-ftdi.o: serio-ftdi.c aldl-io.h aldl-types.h config.h
 	gcc $(CFLAGS) -c serio-ftdi.c -o serio-ftdi.o
@@ -103,9 +103,9 @@ aldldata.o: aldl-io.h aldl-types.h aldldata.c aldlcomm.o config.h
 
 clean:
 	rm -fv *.o *.a $(BINARIES)
-	cd modules ; make clean ; cd ..
-	cd analyzer ; make clean ; cd ..
-	cd rflib ; make clean ; cd ..
+	+make -C modules clean
+	+make -C analyzer clean
+	+make -C rflib clean
 
 stats:
 	wc -l *.c *.h */*.c */*.h

@@ -15,7 +15,7 @@ loadconfig.o: loadconfig.c loadconfig.h config.h
 	gcc $(CFLAGS) -c loadconfig.c
 
 rflib_:
-	cd ../rflib ; make ; cd ../analyzer
+	+make -C ../rflib
 
 install: aldl-analyzer analyzer.conf
 	cp -nv analyzer.conf /etc/aldl/analyzer.conf
@@ -23,7 +23,7 @@ install: aldl-analyzer analyzer.conf
 
 clean:
 	rm -f aldl-analyzer *.o
-	cd ../rflib ; make clean ; cd ../analyzer
+	+make -C ../rflib clean
 
 stats:
 	wc -l *.c *.h */*.c */*.h
