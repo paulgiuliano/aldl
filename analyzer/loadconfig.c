@@ -22,7 +22,7 @@ char *dconfig(char *buf, char *parameter, int n);
 
 char *configopt_fatal(dfile_t *config, char *str) {
   char *val = configopt(config,str,NULL);
-  if(val == NULL) rf_err("Missing config option: %s",str);
+  if(val == NULL) error("Missing config option: %s",str);
   return val;
 }
 
@@ -62,14 +62,14 @@ int configopt_int(dfile_t *config,char *str, int min, int max, int def) {
   if(in == NULL) return def;
   #endif
   int x = atoi(in);
-  if(x < min || x > max) rf_err("Config error: %s must be between %i and %i",
+  if(x < min || x > max) error("Config error: %s must be between %i and %i",
                        str,min,max);
   return x;
 }
 
 int configopt_int_fatal(dfile_t *config,char *str, int min, int max) {
   int x = atoi(configopt_fatal(config,str));
-  if(x < min || x > max) rf_err("Config error: %s must be between %i and %i",
+  if(x < min || x > max) error("Config error: %s must be between %i and %i",
                        str,min,max);
   return x;
 }
@@ -127,7 +127,7 @@ dfile_t *dfile(char *data) {
         if(*cx == '"') { /* skip quoted string */
           cx++;
           while(cx[0] != '"') {
-            if(cx[1] == 0) rf_err("Unterminated quote in config");
+            if(cx[1] == 0) error("Unterminated quote in config");
             if(cx == data + len) continue;
             cx++;
           }
@@ -141,9 +141,9 @@ dfile_t *dfile(char *data) {
       while(is_whitespace(*cx) != 1) {
         if(*cx == '"') { /* skip quoted string */
           cx--;
-          if(cx < data) rf_err("Unterminated quote in config");
+          if(cx < data) error("Unterminated quote in config");
           while(cx[0] != '"') {
-            if(cx == data) rf_err("Unterminated quote in config");
+            if(cx == data) error("Unterminated quote in config");
             if(cx == data + len) continue;
             cx--;
           }

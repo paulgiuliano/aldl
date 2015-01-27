@@ -8,6 +8,9 @@ all: aldl-analyzer
 aldl-analyzer: analyzer.c csv.o loadconfig.o config.h rflib_
 	gcc $(CFLAGS) -o aldl-analyzer analyzer.c csv.o loadconfig.o ../rflib/rflib.o
 
+error: error.c error.h
+	gcc $(CFLAGS) -c error.c
+
 csv.o: csv.c csv.h config.h rflib_
 	gcc $(CFLAGS) -c csv.c
 

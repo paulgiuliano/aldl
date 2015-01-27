@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
   prep_anl();
 
   /* load files ... */
-  if(argc < 2) rf_err("No files specified...");
+  if(argc < 2) error("No files specified...");
   int x;
   char *log;
   printf("Loading files...\n");
@@ -638,7 +638,7 @@ int anl_get_col(char *copt, char *log) {
     }
     free(in);
   }
-  rf_err("Couldn't find column for %s, named %s\n",copt,cname);
+  error("Couldn't find column for %s, named %s\n",copt,cname);
   return 0;
 }
 
@@ -671,7 +671,7 @@ void anl_reset_columns(char *log) {
 void anl_load_conf(char *filename) {
   anl_conf = malloc(sizeof(anl_conf_t));
   dconf = dfile_load(filename);
-  if(dconf == NULL) rf_err("Couldn't load config %s",filename);
+  if(dconf == NULL) error("Couldn't load config %s",filename);
   anl_conf->valid_min_time = configopt_int_fatal(dconf,"MIN_TIME",0,999999);
   anl_conf->valid_min_temp  = configopt_int_fatal(dconf,"MIN_TEMP",-20,99999);
   anl_conf->blm_on = configopt_int_fatal(dconf,"BLM_ON",0,1);
