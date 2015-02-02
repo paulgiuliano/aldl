@@ -8,7 +8,7 @@
 #include "config.h"
 #include "error.h"
 #include "loadconfig.h"
-#include "../rflib/rflib.h"
+#include "useful.h"
 
 /* This is a stripped down and portable version of ../loadconfig.c,
    it may be a bit further behind, though. */

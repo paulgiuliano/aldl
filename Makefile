@@ -1,6 +1,6 @@
 # compiler flags
 CFLAGS= -O2 -Wall
-OBJS= acquire.o error.o loadconfig.o useful.o aldlcomm.o aldldata.o rflib/rflib.o
+OBJS= acquire.o error.o loadconfig.o useful.o aldlcomm.o aldldata.o
 MODULES= modules/*.o
 LIBS= -lpthread -lrt -lncurses
 
@@ -10,7 +10,7 @@ LOGDIR= /var/log/aldl
 BINDIR= /usr/local/bin
 BINARIES= aldl-ftdi aldl-tty aldl-dummy
 
-.PHONY: clean install stats rflib_ modules_
+.PHONY: clean install stats modules_
 
 # not building tty driver by default yet
 all: aldl-ftdi aldl-tty aldl-dummy analyzer_
@@ -48,7 +48,7 @@ install: aldl-ftdi aldl-dummy analyzer_
 	@echo
 	@echo Install complete, see configs in $(CONFIGDIR) before running
 
-aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ rflib_ $(OBJS)
+aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
 	gcc $(CFLAGS) $(LIBS) -lftdi main.c -o aldl-ftdi $(OBJS) $(MODULES) serio-ftdi.o
 	@echo
 	@echo '***************************************************'
@@ -57,7 +57,7 @@ aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ rflib_ $
 	@echo '***************************************************'
 	@echo
 
-aldl-tty: main.c serio-tty.o config.h aldl-io.h aldl-types.h modules_ rflib_ $(OBJS)
+aldl-tty: main.c serio-tty.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
 	@echo 'The TTY serial driver is unfinished,'
 	@echo 'Using it will simply generate an error.'
 	gcc $(CFLAGS) $(LIBS) main.c -o aldl-tty $(OBJS) $(MODULES) serio-tty.o
@@ -83,9 +83,6 @@ modules_:
 analyzer_:
 	+make -C analyzer
 
-rflib_:
-	+make -C rflib
-
 serio-ftdi.o: serio-ftdi.c aldl-io.h aldl-types.h config.h
 	gcc $(CFLAGS) -c serio-ftdi.c -o serio-ftdi.o
 
@@ -105,7 +102,6 @@ clean:
 	rm -fv *.o *.a $(BINARIES)
 	+make -C modules clean
 	+make -C analyzer clean
-	+make -C rflib clean
 
 stats:
 	wc -l *.c *.h */*.c */*.h

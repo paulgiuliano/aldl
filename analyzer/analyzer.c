@@ -9,7 +9,7 @@
 #include "config.h"
 #include "loadconfig.h"
 #include "error.h"
-#include "../rflib/rflib.h"
+#include "useful.h"
 
 #define RPM_GRIDSIZE ( GRID_RPM_RANGE / GRID_RPM_INTERVAL )
 #define MAP_GRIDSIZE ( GRID_MAP_RANGE / GRID_MAP_INTERVAL )

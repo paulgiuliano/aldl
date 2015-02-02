@@ -10,7 +10,6 @@
 #include "../config.h"
 #include "../loadconfig.h"
 #include "../useful.h"
-#include "../rflib/rflib.h"
 
 enum {
   RED_ON_BLACK = 1,

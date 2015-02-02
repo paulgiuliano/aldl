@@ -14,7 +14,6 @@
 #include "aldl-io.h"
 #include "useful.h"
 #include "serio.h"
-#include "rflib/rflib.h"
 
 #include "modules/modules.h"
 

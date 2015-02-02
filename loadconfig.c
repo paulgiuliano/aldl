@@ -12,7 +12,6 @@
 #include "error.h"
 #include "aldl-io.h"
 #include "useful.h"
-#include "rflib/rflib.h"
 
 /************ SCOPE *********************************
   This object contains configuration file loading

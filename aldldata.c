@@ -14,7 +14,6 @@
 #include "config.h"
 #include "aldl-io.h"
 #include "useful.h"
-#include "rflib/rflib.h"
 
 /************ SCOPE *********************************
   This object contains all of the functions used for
