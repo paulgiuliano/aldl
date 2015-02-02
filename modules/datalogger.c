@@ -54,7 +54,13 @@ void *datalogger_init(void *aldl_in) {
   char *linebuf = smalloc(linebufsize);
   char *cursor = linebuf; /* ptr to working byte in line buffer */
 
-  /* wait for buffered connection */
+  /* this label is to be used for pausing and starting a new logfile in case
+     one is required ... */
+  JUMP_ROLL_LOG:
+
+  /* wait for buffered connection.  we do this before creating the actual
+     log file, this makes sense because if a connection never occurs,
+     the file never gets made ... */
   pause_until_buffered(aldl);
 
   /* create logfile */
