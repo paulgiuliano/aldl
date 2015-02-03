@@ -40,8 +40,9 @@ int aldl_reconnect(aldl_commdef_t *c) {
   #endif
   /* wait forever.  bail some other way if you want to stop waiting. */
   while(1) {
-    /* send a 'return to normal mode' command first ... */
-    serial_write(c->returncommand,4);
+    /* send a 'return to normal mode' command first, but don't bother
+       unless the ecm has idle traffic ... */
+    if(aldl_shutup(c) == 1) serial_write(c->returncommand,4);
     msleep(50);
     serial_purge();
     if(c->chatterwait == 1) {
