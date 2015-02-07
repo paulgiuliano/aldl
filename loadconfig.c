@@ -142,7 +142,7 @@ void load_config_a(dfile_t *config) {
   comm->checksum_enable = configopt_int(config,"CHECKSUM_ENABLE",0,1,1);;
   comm->pcm_address = configopt_byte_fatal(config,"PCM_ADDRESS");
   comm->chatterwait = configopt_int(config,"IDLE_ENABLE",0,1,1);
-  if(comm->chatterwait = 1) { /* idle chatter enabled */
+  if(comm->chatterwait == 1) { /* idle chatter enabled */
     comm->idledelay = configopt_int(config,"IDLE_DELAY",0,5000,10);
   }
   comm->shutuprepeat = configopt_int(config,"SHUTUP_REPEAT",0,5000,1);
