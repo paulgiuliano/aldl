@@ -166,15 +166,7 @@ aldl_data_t *aldl_parse_def(aldl_conf_t *aldl, aldl_record_t *r, int n) {
 
   aldl_define_t *def = &aldl->def[n]; /* shortcut to definition */
 
-  /* find associated packet number as 'id' */
-  int id = 0; /* array index, not actual id ..... */
-  #ifdef ALDL_MULTIPACKET
-  /* we'll assume the packet exists; this should be checked during config
-     load time ... */
-  for(id=0; id < aldl->comm->n_packets; id++) {
-    if(aldl->comm->packet[id].id == def->packet) break;
-  }
-  #endif
+  int id = def->packet; /* packet id (array index) */
 
   aldl_packetdef_t *pkt = &aldl->comm->packet[id]; /* ptr to packet */
 
