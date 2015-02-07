@@ -6,10 +6,10 @@
 #include <time.h>
 
 /* local objects */
-#include "../error.h"
-#include "../aldl-io.h"
-#include "../loadconfig.h"
-#include "../useful.h"
+#include "error.h"
+#include "aldl-io.h"
+#include "loadconfig.h"
+#include "useful.h"
 
 void *remote_init(void *aldl_in) {
   aldl_conf_t *aldl = aldl_in;

@@ -6,10 +6,10 @@
 #include <time.h>
 
 /* local objects */
-#include "../error.h"
-#include "../aldl-io.h"
-#include "../loadconfig.h"
-#include "../useful.h"
+#include "error.h"
+#include "aldl-io.h"
+#include "loadconfig.h"
+#include "useful.h"
 
 typedef struct _datalogger_conf {
   dfile_t *dconf; /* raw config data */
@@ -56,7 +56,7 @@ void *datalogger_init(void *aldl_in) {
 
   /* this label is to be used for pausing and starting a new logfile in case
      one is required ... */
-  JUMP_ROLL_LOG:
+  //JUMP_ROLL_LOG:
 
   /* wait for buffered connection.  we do this before creating the actual
      log file, this makes sense because if a connection never occurs,

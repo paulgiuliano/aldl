@@ -5,11 +5,11 @@
 #include <pthread.h>
 #include <string.h>
 
-#include "../error.h"
-#include "../aldl-io.h"
-#include "../config.h"
-#include "../loadconfig.h"
-#include "../useful.h"
+#include "error.h"
+#include "aldl-io.h"
+#include "config.h"
+#include "loadconfig.h"
+#include "useful.h"
 
 enum {
   RED_ON_BLACK = 1,

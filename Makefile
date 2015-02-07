@@ -1,7 +1,6 @@
 # compiler flags
 CFLAGS= -O2 -Wall
-OBJS= acquire.o error.o loadconfig.o useful.o aldlcomm.o aldldata.o
-MODULES= modules/*.o
+OBJS= acquire.o error.o loadconfig.o useful.o aldlcomm.o aldldata.o consoleif.o remote.o datalogger.o
 LIBS= -lpthread -lrt -lncurses
 
 # install configuration
@@ -10,10 +9,10 @@ LOGDIR= /var/log/aldl
 BINDIR= /usr/local/bin
 BINARIES= aldl-ftdi aldl-tty aldl-dummy
 
-.PHONY: clean install stats modules_
+.PHONY: clean install stats
 
 # not building tty driver by default yet
-all: aldl-ftdi aldl-tty aldl-dummy analyzer_
+all: aldl-ftdi aldl-tty aldl-dummy
 	@echo
 	@echo '*********************************************************'
 	@echo ' Run the following as root to install the binaries and'
@@ -22,7 +21,7 @@ all: aldl-ftdi aldl-tty aldl-dummy analyzer_
 	@echo
 
 # not installing tty driver by default yet
-install: aldl-ftdi aldl-dummy analyzer_
+install: aldl-ftdi aldl-dummy
 	@echo Installing to $(BINDIR)
 	cp -fv $(BINARIES) $(BINDIR)/
 	ln -sf $(BINDIR)/aldl-ftdi $(BINDIR)/aldl
@@ -31,8 +30,6 @@ install: aldl-ftdi aldl-dummy analyzer_
 	mkdir -pv $(LOGDIR)
 	@echo 'Copying example configs, will not overwrite...'
 	cp -nv ./config-examples/* $(CONFIGDIR)/
-	@echo 'Installing optional analyzer...'
-	make -C analyzer install
 	@echo
 	@echo '*******************************************************'
 	@echo ' No automatic updates of configs are done.  Please see'
@@ -48,8 +45,8 @@ install: aldl-ftdi aldl-dummy analyzer_
 	@echo
 	@echo Install complete, see configs in $(CONFIGDIR) before running
 
-aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
-	gcc $(CFLAGS) $(LIBS) -lftdi main.c -o aldl-ftdi $(OBJS) $(MODULES) serio-ftdi.o
+aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h $(OBJS)
+	gcc $(CFLAGS) $(LIBS) -lftdi main.c -o aldl-ftdi $(OBJS) serio-ftdi.o
 	@echo
 	@echo '***************************************************'
 	@echo ' You must blacklist or rmmod the ftdi_sio driver!!'
@@ -57,13 +54,13 @@ aldl-ftdi: main.c serio-ftdi.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
 	@echo '***************************************************'
 	@echo
 
-aldl-tty: main.c serio-tty.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
+aldl-tty: main.c serio-tty.o config.h aldl-io.h aldl-types.h $(OBJS)
 	@echo 'The TTY serial driver is unfinished,'
 	@echo 'Using it will simply generate an error.'
-	gcc $(CFLAGS) $(LIBS) main.c -o aldl-tty $(OBJS) $(MODULES) serio-tty.o
+	gcc $(CFLAGS) $(LIBS) main.c -o aldl-tty $(OBJS) serio-tty.o
 
-aldl-dummy: main.c serio-dummy.o config.h aldl-io.h aldl-types.h modules_ $(OBJS)
-	gcc $(CFLAGS) $(LIBS) main.c -o aldl-dummy $(OBJS) $(MODULES) serio-dummy.o
+aldl-dummy: main.c serio-dummy.o config.h aldl-io.h aldl-types.h $(OBJS)
+	gcc $(CFLAGS) $(LIBS) main.c -o aldl-dummy $(OBJS) serio-dummy.o
 
 useful.o: useful.c useful.h config.h aldl-types.h
 	gcc $(CFLAGS) -c useful.c -o useful.o
@@ -76,12 +73,6 @@ acquire.o: acquire.c acquire.h config.h aldl-io.h aldl-types.h
 
 error.o: error.c error.h config.h aldl-types.h
 	gcc $(CFLAGS) -c error.c -o error.o
-
-modules_:
-	+make -C modules
-
-analyzer_:
-	+make -C analyzer
 
 serio-ftdi.o: serio-ftdi.c aldl-io.h aldl-types.h config.h
 	gcc $(CFLAGS) -c serio-ftdi.c -o serio-ftdi.o
@@ -98,10 +89,17 @@ aldlcomm.o: aldl-io.h aldlcomm.c aldlcomm.h aldl-types.h serio-ftdi.o config.h
 aldldata.o: aldl-io.h aldl-types.h aldldata.c aldlcomm.o config.h
 	gcc $(CFLAGS) -c aldldata.c -o aldldata.o
 
+consoleif.o: consoleif.c modules.h
+	gcc -lncurses $(CFLAGS) -c consoleif.c -o consoleif.o
+
+datalogger.o: datalogger.c modules.h
+	gcc $(CFLAGS) -c datalogger.c -o datalogger.o
+
+remote.o: remote.c modules.h
+	gcc $(CFLAGS) -c remote.c -o remote.o
+
 clean:
 	rm -fv *.o *.a $(BINARIES)
-	+make -C modules clean
-	+make -C analyzer clean
 
 stats:
 	wc -l *.c *.h */*.c */*.h
