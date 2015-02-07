@@ -45,7 +45,6 @@ void *aldl_acq(void *aldl_in) {
   timespec_t lagtime;
   #endif
 
-  #ifdef ALDL_MULTIPACKET
   /* prepare array for packet retrieval frequency tracking */
   int *freq_counter = smalloc(sizeof(int) * comm->n_packets);
   int freq_init;
@@ -54,7 +53,6 @@ void *aldl_acq(void *aldl_in) {
        packet is iterated once at the beginning of the acq. routine */
     freq_counter[freq_init] = comm->packet[freq_init].frequency;
   }
-  #endif
 
   /* set timestamp */
   aldl->uptime = time(NULL);
@@ -74,19 +72,17 @@ void *aldl_acq(void *aldl_in) {
     /* iterate through all packets */
     for(npkt=0;npkt < comm->n_packets;npkt++) {
 
-    #ifdef ALDL_MULTIPACKET
     /* ---- frequency select routine ---- */
-      /* skip packet if frequency is 0 to match spec */
-      if(comm->packet[npkt].frequency == 0) continue;
-      if(freq_counter[npkt] < comm->packet[npkt].frequency) {
-        /* frequency requirement not met */
-        freq_counter[npkt]++;
-        continue; /* go to next pkt */
-      } else {
-        /* reached frequency, reset to 1 */
-        freq_counter[npkt] = 1;
-      }
-    #endif
+    /* skip packet if frequency is 0 to match spec */
+    if(comm->packet[npkt].frequency == 0) continue;
+    if(freq_counter[npkt] < comm->packet[npkt].frequency) {
+      /* frequency requirement not met */
+      freq_counter[npkt]++;
+      continue; /* go to next pkt */
+    } else {
+      /* reached frequency, reset to 1 */
+      freq_counter[npkt] = 1;
+    }
 
     pkt = &comm->packet[npkt]; /* pointer to the correct packet */
 
