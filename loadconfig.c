@@ -141,14 +141,18 @@ char *load_config_root(dfile_t *config) {
 void load_config_a(dfile_t *config) {
   comm->checksum_enable = configopt_int(config,"CHECKSUM_ENABLE",0,1,1);;
   comm->pcm_address = configopt_byte_fatal(config,"PCM_ADDRESS");
-  comm->idledelay = configopt_int(config,"IDLE_DELAY",0,5000,10);
   comm->chatterwait = configopt_int(config,"IDLE_ENABLE",0,1,1);
-  comm->shutupcommand = generate_mode(configopt_byte_fatal(config,"SHUTUP_MODE"),comm);
-  comm->returncommand = generate_mode(configopt_byte_fatal(config,"RETURN_MODE"),comm);
+  if(comm->chatterwait = 1) { /* idle chatter enabled */
+    comm->idledelay = configopt_int(config,"IDLE_DELAY",0,5000,10);
+  }
   comm->shutuprepeat = configopt_int(config,"SHUTUP_REPEAT",0,5000,1);
-  comm->shutuprepeatdelay = configopt_int(config,"SHUTUP_DELAY",0,5000,75);
+  if(comm->shutuprepeat > 0) { /* shutup enabled */
+    comm->shutupcommand = generate_mode(configopt_byte_fatal(config,"SHUTUP_MODE"),comm);
+    comm->returncommand = generate_mode(configopt_byte_fatal(config,"RETURN_MODE"),comm);
+    comm->shutuprepeatdelay = configopt_int(config,"SHUTUP_DELAY",0,5000,75);
+    comm->shutup_time = configopt_int(config,"SHUTUP_TIME",0,65535,2500);
+  }
   comm->n_packets = configopt_int(config,"N_PACKETS",1,99,1);
-  comm->shutup_time = configopt_int(config,"SHUTUP_TIME",0,65535,2500);
   comm->byteorder = configopt_int(config,"BYTEORDER",0,1,0);
   aldl->n_defs = configopt_int_fatal(config,"N_DEFS",1,512);
 }
