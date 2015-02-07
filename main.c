@@ -152,4 +152,20 @@ void aldl_sanity_check(aldl_conf_t *aldl) {
   if(aldl->bufstart > aldl->bufsize) {
     error(1,ERROR_RANGE,"Buffer size is smaller than buffer start");
   }
+
+  /* check for packet out of range */
+  int x,y;
+  aldl_packetdef_t *p;
+  for(x=0; x<aldl->n_defs; x++) {
+    y = aldl->def[x].packet;
+    if(y > aldl->comm->n_packets || y < 0) {
+      error(1,ERROR_CONFIG,"Definition for %s belongs to bad packet %i",
+            aldl->def[x].name,aldl->def[x].packet); 
+    }
+    p = &aldl->comm->packet[y];
+    if(aldl->def[x].offset > p->length - p->offset) {
+      error(1,ERROR_CONFIG,"Definition for %s has offset out of range",
+            aldl->def[x].name);
+    }
+  }
 }
