@@ -1,7 +1,7 @@
 # compiler flags
 CFLAGS= -O2 -Wall
 
-.PHONY: clean install stats rflib_
+.PHONY: clean install stats
 
 all: aldl-analyzer
 

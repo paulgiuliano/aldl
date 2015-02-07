@@ -5,7 +5,6 @@
 #include <string.h>
 #include "config.h"
 #include "error.h"
-#include "aldl-io.h"
 
 /************ SCOPE *********************************
   Error handing routines.
