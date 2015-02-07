@@ -179,16 +179,6 @@ void load_config_b(dfile_t *config) {
     #endif
   }
   free(pktname);
-
-  /* sanity checks for single packet mode */
-  #ifndef ALDL_MULTIPACKET
-  if(comm->packet[0].frequency == 0) {
-    error(1,ERROR_CONFIG,"the only packet is disabled due to 0 frequency");
-  }
-  if(comm->n_packets != 1) {
-    error(1,ERROR_CONFIG,"this config requires a multipacket build");
-  }
-  #endif
 }
 
 void aldl_alloc_c() {
