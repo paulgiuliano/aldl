@@ -90,6 +90,11 @@ int serial_write(byte *str, int len) {
   printf("WRITE: ");
   printhexstring(str,len); 
   #endif
+  /* determine mode */
+  if(len == 4 && str[0] == 0xF4 && str[1] == 0x56 && \
+     str[2] == 0x08 && str[3] == 0xAE) {
+     txmode = 1;
+  }
   return 0;
 }
 
