@@ -43,11 +43,12 @@ typedef struct _gauge {
 int index_rpm, index_map, index_speed;
 
 typedef struct _consoleif_conf {
-  int n_gauges;
-  gauge_t *gauge; 
-  dfile_t *dconf;
-  int statusbar;
-  int delay;
+  int n_gauges; /* number of gauges */
+  gauge_t *gauge; /* gauge definitions */
+  dfile_t *dconf; /* conf file, parsed */
+  int statusbar; /* enable statusbar? */
+  int delay; /* acq spd */
+  int tunemode; /* special lt1 tuning mode ... */
 } consoleif_conf_t;
 
 #define COLOR_STATUSSCREEN RED_ON_BLACK
@@ -61,6 +62,8 @@ aldl_conf_t *aldl; /* global pointer to aldl conf struct */
 char *bigbuf; /* a large temporary string construction buffer */
 
 aldl_record_t *rec; /* current record */
+
+byte mfb[15]; /* mode four buffer */
 
 /* --- local functions ------------------------*/
 
@@ -96,6 +99,9 @@ void draw_bin(gauge_t *g);
 void draw_errstr(gauge_t *g);
 void gauge_blank(gauge_t *g);
 void draw_statusbar();
+
+/* tuning stuff */
+void set_spark_delta(char advance);
 
 /* --------------------------------------------*/
 
@@ -402,6 +408,7 @@ consoleif_conf_t *consoleif_load_config(aldl_conf_t *aldl) {
   conf->n_gauges = configopt_int_fatal(config,"N_GAUGES",1,65535);
   conf->statusbar = configopt_int(config,"STATUSBAR",0,1,0);
   conf->delay = configopt_int(config,"DELAY",0,65535,0);
+  conf->tunemode = configopt_int(config,"TUNEMODE",0,1,0);
   /* PER GAUGE OPTIONS */
   conf->gauge = malloc(sizeof(gauge_t) * conf->n_gauges);
   gauge_t *gauge;
@@ -492,4 +499,24 @@ void consoleif_handle_input() {
   if((c = getch()) != ERR) {
     /* do stuff here */
   }
+}
+
+void set_spark_delta(char advance) {
+  /* init mode string */
+  int x;
+  for(x=0;x<15;x++) mfb[x] = 0x00;
+  /* add prefix */
+  mfb[0] = 0xF4;
+  mfb[1] = 0x62;
+  mfb[2] = 0x04;
+  /* add type */
+  if(advance > 0) { /* advance */
+    mfb[13] = 0x05;
+    mfb[14] = advance;
+  } else if(advance < 0) { /* retard */
+    mfb[13] = 0x07;
+    mfb[14] = advance;
+  }
+  /* if zero, the string is already prepared for reset . */
+  aldl_add_command(mfb, 15, 0);
 }
