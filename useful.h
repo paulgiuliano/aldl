@@ -44,6 +44,12 @@ unsigned long get_elapsed_ms(timespec_t timestamp);
 /* get a single bit from a byte.  xor with flip. */
 #define getbit(P,BPOS,FLIP) (int)FLIP^(P>>BPOS&0x01)
 
+/* set a single bit */
+#define setbit(P,BPOS) P |= 1 << BPOS
+
+/* unset a single bit */
+#define clrbit(P,BPOS) P &= ~(1 << BPOS);
+
 /* generate a checksum byte */
 byte checksum_generate(byte *buf, int len);
 
