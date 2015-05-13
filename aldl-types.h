@@ -146,6 +146,7 @@ typedef struct aldl_conf {
                    connection is no longer stable */
   int minmax;   /* enforce min/max values during conversion */
   /* plugin enables -------*/
+  int mode4_enable; /* a special mode ... */
   int consoleif_enable;
   int datalogger_enable;
   int dataserver_enable;

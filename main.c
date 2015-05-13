@@ -27,6 +27,7 @@ typedef struct _aldl_threads_t {
   pthread_t consoleif;
   pthread_t datalogger;
   pthread_t remote;
+  pthread_t mode4;
 } aldl_threads_t;
 
 /* ------ local functions ------------- */
@@ -83,6 +84,8 @@ void parse_cmdline(int argc, char **argv, aldl_conf_t *aldl) {
     } else if(rf_strcmp(argv[n_arg],"devices") == 1) {
       serial_help_devs();
       exit(0);
+    } else if(rf_strcmp(argv[n_arg],"mode4") == 1) {
+      aldl->mode4_enable = 1;
     } else if(rf_strcmp(argv[n_arg],"consoleif") == 1) {
       aldl->consoleif_enable = 1;
     } else if(rf_strcmp(argv[n_arg],"datalogger") == 1) {
@@ -105,19 +108,24 @@ void modules_verify(aldl_conf_t *aldl) {
 }
 
 void modules_start(aldl_threads_t *thread, aldl_conf_t *aldl) {
-  if(aldl->consoleif_enable == 1) {
-    pthread_create(&thread->consoleif,NULL,
-                   consoleif_init,(void *) aldl);
-  }
+  if(aldl->mode4_enable == 1) {
+    pthread_create(&thread->mode4,NULL,
+              mode4_init,(void *) aldl);
+  } else {
+    if(aldl->consoleif_enable == 1) {
+      pthread_create(&thread->consoleif,NULL,
+                     consoleif_init,(void *) aldl);
+    }
 
-  if(aldl->datalogger_enable == 1) {
-    pthread_create(&thread->datalogger,NULL,
-                   datalogger_init,(void *) aldl);
-  }
+    if(aldl->datalogger_enable == 1) {
+      pthread_create(&thread->datalogger,NULL,
+                     datalogger_init,(void *) aldl);
+    }
 
-  if(aldl->remote_enable == 1) {
-    pthread_create(&thread->remote,NULL,
-                    remote_init,(void *) aldl);
+    if(aldl->remote_enable == 1) {
+      pthread_create(&thread->remote,NULL,
+                      remote_init,(void *) aldl);
+    }
   }
 }
 

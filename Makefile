@@ -1,6 +1,6 @@
 # compiler flags
 CFLAGS= -O2 -Wall
-OBJS= acquire.o error.o loadconfig.o useful.o aldlcomm.o aldldata.o consoleif.o remote.o datalogger.o
+OBJS= acquire.o error.o loadconfig.o useful.o aldlcomm.o aldldata.o consoleif.o remote.o datalogger.o mode4.o
 LIBS= -lpthread -lrt -lncurses
 
 # install configuration
@@ -97,6 +97,9 @@ datalogger.o: datalogger.c modules.h
 
 remote.o: remote.c modules.h
 	gcc $(CFLAGS) -c remote.c -o remote.o
+
+mode4.o: mode4.c modules.h
+	gcc $(CFLAGS) -c mode4.c -o mode4.o
 
 clean:
 	rm -fv *.o *.a $(BINARIES)
