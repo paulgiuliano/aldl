@@ -20,10 +20,41 @@ enum {
   WHITE_ON_RED = 6
 };
 
+typedef struct {
+  byte afr;
+  int sparkabs;
+  int sparkdelta;
+  int rpm;
+  int cyl;
+} m4_status_t;
+m4_status_t m4_status;
+
+typedef struct {
+  float rpm;
+  float idletarget;
+  int iacsteps;
+  float cooltemp;
+  float map;
+  int adv;
+} engine_status_t;
+engine_status_t engine_status;
+
+typedef struct {
+  int rpm;
+  int idletarget;
+  int iacsteps;
+  int cooltemp;
+  int map;
+  int adv;
+} p_index_t;
+p_index_t p_idx;
+
 /* some global cached indexes */
 int index_rpm, index_map, index_speed;
 
 #define COLOR_STATUSSCREEN RED_ON_BLACK
+
+#define M4_USE_STRING "TIMING[q/w]  RESET[SPC]  SNAP[ENTER]"
 
 /* --- variables ---------------------------- */
 
@@ -31,13 +62,17 @@ int w_height, w_width; /* width and height of window */
 
 aldl_conf_t *aldl; /* global pointer to aldl conf struct */
 
-char *bigbuf; /* a large temporary string construction buffer */
-
 aldl_record_t *rec; /* current record */
 
 byte mfb[15]; /* mode four buffer */
 
+int m4_commrev; /* m4 comm string revised */
+
+char *msgbuf;
+
 /* --- local functions ------------------------*/
+
+void get_engine_status(); /* get engine data */
 
 /* center half-width of an element on the screen */
 int m4_xcenter(int width);
@@ -46,14 +81,31 @@ int m4_ycenter(int height);
 /* print a centered string */
 void m4_statusmessage(char *str);
 
+/* print engine status to msgbuf returns ptr to msgbuf */
+char *print_engine_status();
+
 /* clear screen and display waiting for connection messages */
 void m4_cons_wait_for_connection();
 
 /* handle ncurses input */
 void m4_consoleif_handle_input();
 
-/* gauges -------------------*/
-void m4_draw_data(int x, int y, int gauge_index);
+/* write mode 4 command to screen */
+void m4_draw_cmd(int xpos, int ypos);
+
+/* record current snapshot to disk */
+void m4_record_status();
+
+/* m4 comm */
+void m4_init_status();
+void m4_comm_init();
+void m4_comm_cancel();
+void m4_comm_submit();
+
+void m4_comm_spark(int advance, int absolute);
+void m4_comm_afr(byte afr);
+void m4_comm_idle(int rpm, int mode); /* mode1=rpm mode0=steps */
+void m4_drop_cyl(int cyl);
 
 /* tuning stuff */
 void set_spark_delta(char advance);
@@ -63,7 +115,7 @@ void set_spark_delta(char advance);
 void *mode4_init(void *aldl_in) {
   aldl = (aldl_conf_t *)aldl_in;
 
-  bigbuf = smalloc(512);
+  msgbuf = malloc(sizeof(char) * 2048);
 
   /* initialize root window */
   WINDOW *root;
@@ -84,23 +136,45 @@ void *mode4_init(void *aldl_in) {
   init_pair(WHITE_ON_BLACK,COLOR_WHITE,COLOR_BLACK);
   init_pair(WHITE_ON_RED,COLOR_WHITE,COLOR_RED);
 
+  /* fetch indexes */
+  p_idx.rpm = get_index_by_name(aldl,"RPM");
+  p_idx.idletarget = get_index_by_name(aldl,"IDLESPD");
+  p_idx.iacsteps = get_index_by_name(aldl,"IAC");
+  p_idx.cooltemp = get_index_by_name(aldl,"COOLTMP");
+  p_idx.map = get_index_by_name(aldl,"MAP");
+  p_idx.adv = get_index_by_name(aldl,"ADV");
+
   /* get initial screen size */
   getmaxyx(stdscr,w_height,w_width);
 
-  /* some globals */
-  index_rpm = get_index_by_name(aldl,"RPM");
-  index_map = get_index_by_name(aldl,"MAP");
-  index_speed = get_index_by_name(aldl,"SPEED");
-
   m4_cons_wait_for_connection();
 
+  m4_comm_init(); /* initalize command */
+
   while(1) {
+
+    /* get newest record */
     rec = newest_record_wait(aldl,rec);
     if(rec == NULL) { /* disconnected */
       m4_cons_wait_for_connection();
       continue;
     }
-    m4_consoleif_handle_input();
+
+    /* process engine status */
+    get_engine_status();
+
+    clear(); /* clear screen --------- */
+
+    m4_draw_cmd(1,1); /* print hex string */
+    mvprintw(0,1,M4_USE_STRING); /* print usage */
+
+    /* print eng status */
+    mvprintw(3,1,"%s",print_engine_status());
+
+    m4_commrev = 0; /* reset revision bit */
+    m4_consoleif_handle_input(); /* get keyboard input and branch */
+    if(m4_commrev == 1) m4_comm_submit(); /* send command if revised */
+
     /* DRAW HERE */
 
     refresh();
@@ -114,6 +188,48 @@ void *mode4_init(void *aldl_in) {
 
   pthread_exit(NULL);
   return NULL;
+}
+
+void get_engine_status() {
+  engine_status.rpm = rec->data[p_idx.rpm].f;
+  engine_status.idletarget = rec->data[p_idx.idletarget].f;
+  engine_status.iacsteps = rec->data[p_idx.iacsteps].i;
+  engine_status.cooltemp = rec->data[p_idx.cooltemp].f;
+  engine_status.map = rec->data[p_idx.map].f;
+  engine_status.adv = rec->data[p_idx.adv].i;
+}
+
+char *print_engine_status() {
+  char *c = msgbuf;
+  /* engine status */
+  c += sprintf(c,"---------------------------------\n");
+  c += sprintf(c,"Engine Speed: %.0f RPM\n",engine_status.rpm);
+  c += sprintf(c,"Manifold Pressure: %.0f KPA\n",engine_status.map);
+  c += sprintf(c,"Spark Advance: %i Deg\n",engine_status.adv);
+  c += sprintf(c,"Idle Target: %.0f RPM (%i Steps)\n",
+               engine_status.idletarget,engine_status.iacsteps);
+  c += sprintf(c,"Engine Temp: %.0f c\n",engine_status.cooltemp);
+  c += sprintf(c,"\n");
+  /* modifier status */
+  if(m4_status.afr != 0) {
+    c += sprintf(c,"** Mode 4 Forced AFR: %.1f:1\n",((float)m4_status.afr/10));
+  }
+  if(m4_status.sparkabs != 0) {
+    c += sprintf(c,"** Mode 4 Absolute Spark: %i DEG\n",m4_status.sparkabs);
+  }
+  if(m4_status.sparkdelta > 0) {
+    c += sprintf(c,"** Mode 4 Added Spark: +%i DEG\n",m4_status.sparkdelta);
+  }
+  if(m4_status.sparkdelta < 0) {
+    c += sprintf(c,"** Mode 4 Subtraced Spark: %i DEG\n",m4_status.sparkdelta);
+  } 
+  if(m4_status.rpm != 0) {
+    c += sprintf(c,"** Mode 4 Force Idle: %i RPM\n",m4_status.rpm);
+  }
+  if(m4_status.cyl > 0) {
+    c += sprintf(c,"** Mode 4 CUT CYLINDER ID %i\n",m4_status.cyl);
+  }
+  return msgbuf;
 }
 
 int m4_xcenter(int width) {
@@ -153,24 +269,10 @@ void m4_cons_wait_for_connection() {
   clear();
 }
 
-/* --- GAUGES ---------------------------------- */
-
-void m4_draw_data(int x, int y, int gauge_index) {
-  aldl_define_t *def = &aldl->def[gauge_index];
-  aldl_data_t *data = &rec->data[gauge_index];
-  switch(def->type) {
-    case ALDL_FLOAT:
-      mvprintw(y,x,"%s: %.*f",
-              def->name,1,data->f);
-      break;
-    case ALDL_INT:
-    case ALDL_BOOL:
-      mvprintw(y,x,"%s: %i",
-          def->name,data->i);
-      break;
-    default:
-      return;
-  }
+void m4_draw_cmd(int xpos, int ypos) {
+  move(ypos,xpos); 
+  int x;
+  for(x=0;x<15;x++) printw("%X ",(unsigned int)mfb[x]);
 }
 
 void m4_mode4_exit() {
@@ -180,26 +282,161 @@ void m4_mode4_exit() {
 void m4_consoleif_handle_input() {
   int c;
   if((c = getch()) != ERR) {
-    /* do stuff here */
+    switch(c) {
+      case 'q': /* timing down */
+        m4_status.sparkdelta--;
+        m4_comm_spark(m4_status.sparkdelta,0);
+        m4_commrev = 1;
+      break;
+      case 'w': /* timing up */
+        m4_status.sparkdelta++;
+        m4_comm_spark(m4_status.sparkdelta,0);
+        m4_commrev = 1;
+      break;
+      case 'a': /* idle down */
+        if(m4_status.rpm == 0) { /* init from current idle */
+           m4_status.rpm = engine_status.idletarget;
+        };
+        m4_comm_idle(m4_status.rpm - 25,1);
+      break;
+      case 's': /* idle up */
+        if(m4_status.rpm == 0) { /* init from current idle */
+           m4_status.rpm = engine_status.idletarget;
+        };
+        m4_comm_idle(m4_status.rpm + 25,1);
+      break;
+      case '0': /* cyl cut */
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+        m4_drop_cyl(c - '0');
+      break;
+      case ' ': /* reset */
+        m4_comm_init();
+        m4_commrev = 1;
+      break;
+      case '\n': /* snapshot */
+        m4_record_status();
+      break;
+    };
   }
 }
 
-void set_spark_delta(char advance) {
-  /* init mode string */
+void m4_comm_spark(int advance, int absolute) {
+  if(advance == 0 || advance > 60) { /* no advance, disable */
+    clrbit(mfb[13],0); /* disable spark control */
+    clrbit(mfb[13],2); /* clear mode (redundant ...) */
+    clrbit(mfb[13],1); /* clear advret (redundant ...) */
+    mfb[14] = 0; /* clear adv */
+    m4_status.sparkabs = 0;
+    m4_status.sparkdelta = 0;
+  } else {
+
+    setbit(mfb[13],0); /* enable spark control */
+
+    /* WARNING absolute mode is kinda fucking dangerous, dont use it */
+    if(absolute == 1) { /* configure for absolute spark */
+      clrbit(mfb[13],2); /* abs mode */
+      mfb[14] = advance; /* set advance */
+      m4_status.sparkabs = advance;
+      m4_status.sparkdelta = 0;
+      /* don't bother with retard/advance, abs negative spark is useless */
+
+    } else { /* configure for delta spark */
+      setbit(mfb[13],2); /* delta mode */
+      if(advance > 0) {
+        clrbit(mfb[13],1); /* advance */
+        mfb[14] = advance;
+      } else {
+        setbit(mfb[13],1); /* retard */
+        mfb[14] = ( 1 - advance );
+      }
+      m4_status.sparkabs = 0;
+      m4_status.sparkdelta = advance;
+    }
+  }
+}
+
+void m4_comm_idle(int rpm, int mode) {
+  if(rpm == 0) { /* disable idle command */
+    clrbit(mfb[9],4); /* clear iac enable */
+    clrbit(mfb[9],5); /* clear steps/rpm */
+  } else if(mode == 1) { /* RPM mode */
+    setbit(mfb[9],4); /* set iac enable */
+    setbit(mfb[9],5); /* set rpm mode */
+    mfb[11] = rf_clamp_int(0,3000,rpm * 0.08); /* set rpm */
+  } else { /* steps mode */
+    setbit(mfb[9],4); /* set iac enable */
+    clrbit(mfb[9],5); /* set rpm mode */
+    mfb[11] = rf_clamp_int(0,255,rpm); /* set steps */
+  }
+  m4_status.rpm = rpm;
+}
+
+void m4_drop_cyl(int cyl) {
+  if(cyl == 0) {
+    clrbit(mfb[9],7); /* disable cut */
+    mfb[12] = 0x00; /* disable cyl */
+    m4_status.cyl = 0;
+  } else {
+    m4_comm_afr(0); /* disable afr (conflict) */ 
+    mfb[12] = rf_clamp_int(1,8,cyl);
+    setbit(mfb[9],7); /* enable cut */
+    m4_status.cyl = mfb[12];
+  }
+}
+
+void m4_comm_afr(byte afr) {
+  if(afr > 0) {
+    setbit(mfb[9],6);
+    mfb[12] = afr;
+    m4_status.afr = afr;
+  } else {
+    clrbit(mfb[9],6);
+    mfb[12] = 0x00;
+    m4_status.afr = 0;
+  }
+}
+
+void m4_comm_init() {
+  /* zero */
   int x;
-  for(x=0;x<15;x++) mfb[x] = 0x00;
+  for(x=3;x<15;x++) mfb[x] = 0x00;
   /* add prefix */
   mfb[0] = 0xF4;
   mfb[1] = 0x62;
   mfb[2] = 0x04;
-  /* add type */
-  if(advance > 0) { /* advance */
-    mfb[13] = 0x05;
-    mfb[14] = advance;
-  } else if(advance < 0) { /* retard */
-    mfb[13] = 0x07;
-    mfb[14] = advance;
-  }
-  /* if zero, the string is already prepared for reset . */
+  m4_init_status();
+}
+
+void m4_comm_cancel() {
+  m4_comm_init();
+  m4_comm_submit();
+}
+
+void m4_comm_submit() {
   aldl_add_command(mfb, 15, 15);
 }
+
+void m4_init_status() {
+  m4_status.afr = 0;
+  m4_status.sparkabs = 0;
+  m4_status.sparkdelta = 0;
+  m4_status.rpm = 0;
+  m4_status.cyl = 0;
+}
+
+void m4_record_status() {
+  FILE *fdesc = fopen("/var/tmp/MODE4_LOG","a");
+  if(fdesc == NULL) error(1,ERROR_PLUGIN,"cant open mode4 snapfile !");
+
+  fwrite(print_engine_status(),strlen(msgbuf),1,fdesc);
+  
+  fclose(fdesc);
+}
+
