@@ -111,6 +111,10 @@ void modules_start(aldl_threads_t *thread, aldl_conf_t *aldl) {
   if(aldl->mode4_enable == 1) {
     pthread_create(&thread->mode4,NULL,
               mode4_init,(void *) aldl);
+    if(aldl->datalogger_enable == 1) { /* allow datalogger ... */
+             pthread_create(&thread->datalogger,NULL,
+                     datalogger_init,(void *) aldl);
+    }
   } else {
     if(aldl->consoleif_enable == 1) {
       pthread_create(&thread->consoleif,NULL,
