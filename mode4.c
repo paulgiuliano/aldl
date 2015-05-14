@@ -35,10 +35,12 @@ typedef struct {
   int iacsteps;
   float cooltemp;
   float map;
+  float kr;
   int adv;
 } engine_status_t;
 engine_status_t engine_status;
 
+/* data indexes */
 typedef struct {
   int rpm;
   int idletarget;
@@ -46,6 +48,7 @@ typedef struct {
   int cooltemp;
   int map;
   int adv;
+  int kr;
 } p_index_t;
 p_index_t p_idx;
 
@@ -143,6 +146,7 @@ void *mode4_init(void *aldl_in) {
   p_idx.cooltemp = get_index_by_name(aldl,"COOLTMP");
   p_idx.map = get_index_by_name(aldl,"MAP");
   p_idx.adv = get_index_by_name(aldl,"ADV");
+  p_idx.kr = get_index_by_name(aldl,"KR");
 
   /* get initial screen size */
   getmaxyx(stdscr,w_height,w_width);
@@ -197,6 +201,7 @@ void get_engine_status() {
   engine_status.cooltemp = rec->data[p_idx.cooltemp].f;
   engine_status.map = rec->data[p_idx.map].f;
   engine_status.adv = rec->data[p_idx.adv].i;
+  engine_status.kr = rec->data[p_idx.kr].f;
 }
 
 char *print_engine_status() {
@@ -206,6 +211,7 @@ char *print_engine_status() {
   c += sprintf(c,"Engine Speed: %.0f RPM\n",engine_status.rpm);
   c += sprintf(c,"Manifold Pressure: %.0f KPA\n",engine_status.map);
   c += sprintf(c,"Spark Advance: %i Deg\n",engine_status.adv);
+  c += sprintf(c,"Knock Ret: %.1f\n",engine_status.kr);
   c += sprintf(c,"Idle Target: %.0f RPM (%i Steps)\n",
                engine_status.idletarget,engine_status.iacsteps);
   c += sprintf(c,"Engine Temp: %.0f c\n",engine_status.cooltemp);
