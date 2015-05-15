@@ -57,25 +57,28 @@ int index_rpm, index_map, index_speed;
 
 #define COLOR_STATUSSCREEN RED_ON_BLACK
 
-#define M4_USE_STRING "TIMING[q/w]  RESET[SPC]  SNAP[ENTER]"
+#define M4_USE_STRING "SPK[q/w] RESET[SPC] RECORD[ENTER] IDLE[a/s] CUT[0-8]"
+
+/* minimum and maximum spark alignment */
+#define MODE4MINSPK -50
+#define MODE4MAXSPK 50
 
 /* --- variables ---------------------------- */
 
 int w_height, w_width; /* width and height of window */
 
 aldl_conf_t *aldl; /* global pointer to aldl conf struct */
-
 aldl_record_t *rec; /* current record */
 
-byte mfb[15]; /* mode four buffer */
+byte mfb[15]; /* mode four string buffer */
+int m4_commrev; /* set this bit if m4 comm string was revised */
 
-int m4_commrev; /* m4 comm string revised */
-
-char *msgbuf;
+char *msgbuf; /* a big message buffer used for single log entry */
+#define MSGBUFSIZE 2048
 
 /* --- local functions ------------------------*/
 
-void get_engine_status(); /* get engine data */
+void get_engine_status(); /* pull engine data from rec to engine_data struct */
 
 /* center half-width of an element on the screen */
 int m4_xcenter(int width);
@@ -93,11 +96,16 @@ void m4_cons_wait_for_connection();
 /* handle ncurses input */
 void m4_consoleif_handle_input();
 
+#ifdef M4_PRINT_HEX
 /* write mode 4 command to screen */
 void m4_draw_cmd(int xpos, int ypos);
+#endif
 
 /* record current snapshot to disk */
 void m4_record_status();
+
+/* return 1 if old is different from new by thresh */
+int check_max_difference(int old, int new, int thresh);
 
 /* m4 comm */
 void m4_init_status();
@@ -105,20 +113,18 @@ void m4_comm_init();
 void m4_comm_cancel();
 void m4_comm_submit();
 
-void m4_comm_spark(int advance, int absolute);
-void m4_comm_afr(byte afr);
-void m4_comm_idle(int rpm, int mode); /* mode1=rpm mode0=steps */
-void m4_drop_cyl(int cyl);
-
-/* tuning stuff */
-void set_spark_delta(char advance);
+void m4_comm_spark(int advance, int absolute); /* set spark, absolute=0 delta */
+void m4_comm_afr(byte afr); /* set air fuel ratio, 0=disable */
+void m4_comm_idle(int rpm, int mode); /* mode1=rpm mode0=steps rpm=0=disable */
+void m4_drop_cyl(int cyl); /* drop a cylinder or 0 to enable all, overr.afr */
 
 /* --------------------------------------------*/
 
 void *mode4_init(void *aldl_in) {
   aldl = (aldl_conf_t *)aldl_in;
 
-  msgbuf = malloc(sizeof(char) * 2048);
+  /* allocate main message buffer for log entries */
+  msgbuf = malloc(sizeof(char) * MSGBUFSIZE);
 
   /* initialize root window */
   WINDOW *root;
@@ -131,6 +137,7 @@ void *mode4_init(void *aldl_in) {
   nodelay(root,true); /* non-blocking input */
   noecho();
 
+  /* configure colors (even though this doesn't use much color) */
   start_color();
   init_pair(RED_ON_BLACK,COLOR_RED,COLOR_BLACK);
   init_pair(BLACK_ON_RED,COLOR_BLACK,COLOR_RED);
@@ -151,9 +158,11 @@ void *mode4_init(void *aldl_in) {
   /* get initial screen size */
   getmaxyx(stdscr,w_height,w_width);
 
+  /* wait for connection */
   m4_cons_wait_for_connection();
 
-  m4_comm_init(); /* initalize command */
+  /* prepare null mode4 command */
+  m4_comm_init();
 
   while(1) {
 
@@ -169,17 +178,19 @@ void *mode4_init(void *aldl_in) {
 
     clear(); /* clear screen --------- */
 
-    m4_draw_cmd(1,1); /* print hex string */
+    #ifdef M4_PRINT_HEX
+    /* print the m4 string in hex for debug */
+    m4_draw_cmd(1,1);
+    #endif
+
     mvprintw(0,1,M4_USE_STRING); /* print usage */
 
     /* print eng status */
-    mvprintw(3,1,"%s",print_engine_status());
+    mvprintw(2,1,"%s",print_engine_status());
 
-    m4_commrev = 0; /* reset revision bit */
+    m4_commrev = 0; /* reset revision bit.  input handler may set it */
     m4_consoleif_handle_input(); /* get keyboard input and branch */
     if(m4_commrev == 1) m4_comm_submit(); /* send command if revised */
-
-    /* DRAW HERE */
 
     refresh();
     usleep(500);
@@ -206,6 +217,7 @@ void get_engine_status() {
 
 char *print_engine_status() {
   char *c = msgbuf;
+
   /* engine status */
   c += sprintf(c,"---------------------------------\n");
   c += sprintf(c,"Engine Speed: %.0f RPM\n",engine_status.rpm);
@@ -216,24 +228,25 @@ char *print_engine_status() {
                engine_status.idletarget,engine_status.iacsteps);
   c += sprintf(c,"Engine Temp: %.0f c\n",engine_status.cooltemp);
   c += sprintf(c,"\n");
+
   /* modifier status */
   if(m4_status.afr != 0) {
-    c += sprintf(c,"** Mode 4 Forced AFR: %.1f:1\n",((float)m4_status.afr/10));
+    c += sprintf(c,"Forced AFR: %.1f:1\n",((float)m4_status.afr/10));
   }
   if(m4_status.sparkabs != 0) {
-    c += sprintf(c,"** Mode 4 Absolute Spark: %i DEG\n",m4_status.sparkabs);
+    c += sprintf(c,"Absolute Spark: %i DEG\n",m4_status.sparkabs);
   }
   if(m4_status.sparkdelta > 0) {
-    c += sprintf(c,"** Mode 4 Added Spark: +%i DEG\n",m4_status.sparkdelta);
+    c += sprintf(c,"Added Spark: +%i DEG\n",m4_status.sparkdelta);
   }
   if(m4_status.sparkdelta < 0) {
-    c += sprintf(c,"** Mode 4 Subtraced Spark: %i DEG\n",m4_status.sparkdelta);
+    c += sprintf(c,"Subtracted Spark: %i DEG\n",m4_status.sparkdelta);
   } 
   if(m4_status.rpm != 0) {
-    c += sprintf(c,"** Mode 4 Force Idle: %i RPM\n",m4_status.rpm);
+    c += sprintf(c,"Force Idle: %i RPM\n",m4_status.rpm);
   }
   if(m4_status.cyl > 0) {
-    c += sprintf(c,"** Mode 4 CUT CYLINDER ID %i\n",m4_status.cyl);
+    c += sprintf(c,"Disabled Cylinder: %i\n",m4_status.cyl);
   }
   return msgbuf;
 }
@@ -275,11 +288,13 @@ void m4_cons_wait_for_connection() {
   clear();
 }
 
+#ifdef M4_PRINT_HEX
 void m4_draw_cmd(int xpos, int ypos) {
   move(ypos,xpos); 
   int x;
   for(x=0;x<15;x++) printw("%X ",(unsigned int)mfb[x]);
 }
+#endif
 
 void m4_mode4_exit() {
   endwin();
@@ -287,7 +302,7 @@ void m4_mode4_exit() {
 
 void m4_consoleif_handle_input() {
   int c;
-  if((c = getch()) != ERR) {
+  while((c = getch()) != ERR) {
     switch(c) {
       case 'q': /* timing down */
         m4_status.sparkdelta--;
@@ -348,7 +363,7 @@ void m4_comm_spark(int advance, int absolute) {
     /* WARNING absolute mode is kinda fucking dangerous, dont use it */
     if(absolute == 1) { /* configure for absolute spark */
       clrbit(mfb[13],2); /* abs mode */
-      mfb[14] = advance; /* set advance */
+      mfb[14] = rf_clamp_int(MODE4MINSPK,MODE4MAXSPK,advance); /* set advance */
       m4_status.sparkabs = advance;
       m4_status.sparkdelta = 0;
       /* don't bother with retard/advance, abs negative spark is useless */
@@ -357,10 +372,10 @@ void m4_comm_spark(int advance, int absolute) {
       setbit(mfb[13],2); /* delta mode */
       if(advance > 0) {
         clrbit(mfb[13],1); /* advance */
-        mfb[14] = advance;
+        mfb[14] = rf_clamp_int(MODE4MINSPK,MODE4MAXSPK,advance);
       } else {
         setbit(mfb[13],1); /* retard */
-        mfb[14] = ( 1 - advance );
+        mfb[14] = rf_clamp_int(MODE4MINSPK,MODE4MAXSPK,( 1 - advance ));
       }
       m4_status.sparkabs = 0;
       m4_status.sparkdelta = advance;
@@ -372,16 +387,18 @@ void m4_comm_idle(int rpm, int mode) {
   if(rpm == 0) { /* disable idle command */
     clrbit(mfb[9],4); /* clear iac enable */
     clrbit(mfb[9],5); /* clear steps/rpm */
+    m4_status.rpm = 0;
   } else if(mode == 1) { /* RPM mode */
     setbit(mfb[9],4); /* set iac enable */
     setbit(mfb[9],5); /* set rpm mode */
-    mfb[11] = rf_clamp_int(0,3000,rpm * 0.08); /* set rpm */
+    m4_status.rpm = rf_clamp_int(0,3000,rpm); /* clamp and set stat */ 
+    mfb[11] = m4_status.rpm * 0.08; /* set rpm */
   } else { /* steps mode */
     setbit(mfb[9],4); /* set iac enable */
     clrbit(mfb[9],5); /* set rpm mode */
-    mfb[11] = rf_clamp_int(0,255,rpm); /* set steps */
+    m4_status.rpm = rf_clamp_int(0,255,rpm); /* clamp and set stat */
+    mfb[11] = rpm;
   }
-  m4_status.rpm = rpm;
 }
 
 void m4_drop_cyl(int cyl) {
@@ -446,3 +463,7 @@ void m4_record_status() {
   fclose(fdesc);
 }
 
+int check_max_difference(int old, int new, int thresh) {
+  if(old - new > thresh || new - old > thresh) return 1;
+  return 0;
+}
