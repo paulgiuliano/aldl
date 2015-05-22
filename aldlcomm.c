@@ -224,7 +224,7 @@ byte *generate_request(byte mode, byte message, aldl_commdef_t *comm) {
   command[1] = calc_msglength(5); 
   command[2] = mode;
   command[3] = message;
-  command[4] = checksum_generate(command,5-1);
+  command[4] = checksum_generate(command,4); /* 4=msglen */
   return command;
 }
 
@@ -233,7 +233,7 @@ byte *generate_mode(byte mode, aldl_commdef_t *comm) {
   tmp[0] = comm->pcm_address;
   tmp[1] = calc_msglength(4);
   tmp[2] = mode;
-  tmp[3] = checksum_generate(tmp,4-1);
+  tmp[3] = checksum_generate(tmp,3); /* 3=msglen */
   return tmp;
 }
 
