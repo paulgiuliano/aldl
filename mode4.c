@@ -20,6 +20,8 @@ enum {
   WHITE_ON_RED = 6
 };
 
+/* this is the current global status of the mode 4 command.  yes this is
+   replication from the actual mode 4 command bytes, but it's easier to read. */
 typedef struct {
   byte afr;
   int sparkabs;
@@ -29,6 +31,7 @@ typedef struct {
 } m4_status_t;
 m4_status_t m4_status;
 
+/* represention of the current engine status from the datastream */
 typedef struct {
   float rpm;
   float idletarget;
@@ -40,7 +43,7 @@ typedef struct {
 } engine_status_t;
 engine_status_t engine_status;
 
-/* data indexes */
+/* cached index numbers of engine datastream elements */
 typedef struct {
   int rpm;
   int idletarget;
@@ -52,14 +55,13 @@ typedef struct {
 } p_index_t;
 p_index_t p_idx;
 
-/* some global cached indexes */
-int index_rpm, index_map, index_speed;
-
+/* the color of a status message */
 #define COLOR_STATUSSCREEN RED_ON_BLACK
 
+/* "usage" string */
 #define M4_USE_STRING "SPK[q/w] RESET[SPC] RECORD[ENTER] IDLE[a/s] CUT[0-8]"
 
-/* minimum and maximum spark alignment */
+/* minimum and maximum spark delta and total (should be seperate) */
 #define MODE4MINSPK -50
 #define MODE4MAXSPK 50
 
@@ -357,7 +359,7 @@ void m4_consoleif_handle_input() {
 }
 
 void m4_comm_spark(int advance, int absolute) {
-  if(advance == 0 || advance > 60) { /* no advance, disable */
+  if(advance == 0 || MODE4MAXSPK > 60) { /* no advance, disable */
     clrbit(mfb[13],0); /* disable spark control */
     clrbit(mfb[13],2); /* clear mode (redundant ...) */
     clrbit(mfb[13],1); /* clear advret (redundant ...) */
