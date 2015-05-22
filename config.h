@@ -131,6 +131,12 @@
    system; so the check should not be necessary ... and results are undefined */
 #define TIMESTAMP_WRAPAROUND
 
+/* when sending auxiliary commands such as EE MODE4 stuff, send the message
+   three times instead of one to help ensure success.  there's no real way to
+   tell if the command succeeded, so this is probably a good idea?
+   if commands are cumulative this is obviously broken, though. */
+#define AUXCOMMAND_RETRY
+
 /* ------- FTDI DRIVER CONFIG ------------------------*/
 
 /* the baud rate to set for the ftdi usb userland driver.  reccommend 8192. */

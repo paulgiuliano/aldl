@@ -150,11 +150,17 @@ void *aldl_acq(void *aldl_in) {
     auxcommand = aldl_get_command();
     if(auxcommand != NULL) { /* a command was found */
       serial_write(auxcommand->command, auxcommand->length); 
+      #ifdef AUXCOMMAND_RETRY
+      /* since aux commands are stateless, optional resend ... */
+      serial_write(auxcommand->command, auxcommand->length);
+      serial_write(auxcommand->command, auxcommand->length);
+      #endif
       msleep(auxcommand->delay);
       serial_purge(); /* flush after delay to discard? */
       /* FIXME need more logic, maybe callbacks? */
       free(auxcommand->command);
       free(auxcommand);
+      goto noquerypkt; 
     }
 
     /* ------- sanity checks and retrieve packet ------------ */
@@ -238,6 +244,8 @@ void *aldl_acq(void *aldl_in) {
 
     /* process the packet */
     process_data(aldl);
+
+    noquerypkt:
 
     /* set readiness bit */
     if(aldl->ready == 0) {
