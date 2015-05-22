@@ -176,7 +176,7 @@ void *mode4_init(void *aldl_in) {
     /* process engine status */
     get_engine_status();
 
-    clear(); /* clear screen --------- */
+    erase(); /* clear screen --------- */
 
     #ifdef M4_PRINT_HEX
     /* print the m4 string in hex for debug */
@@ -455,7 +455,7 @@ void m4_init_status() {
 }
 
 void m4_record_status() {
-  FILE *fdesc = fopen("/var/tmp/MODE4_LOG","a");
+  FILE *fdesc = fopen("/var/log/aldl/MODE4_LOG","a");
   if(fdesc == NULL) error(1,ERROR_PLUGIN,"cant open mode4 snapfile !");
 
   fwrite(print_engine_status(),strlen(msgbuf),1,fdesc);

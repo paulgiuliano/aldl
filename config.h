@@ -176,3 +176,6 @@
 
 /* the char used for ncurses progress bar stuff */
 #define CONSOLEIF_BAR_CHAR '*'
+
+/* print hex M4 string */
+#define M4_PRINT_HEX

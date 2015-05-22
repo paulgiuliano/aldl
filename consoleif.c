@@ -216,7 +216,7 @@ void draw_statusbar() {
 }
 
 void statusmessage(char *str) {
-  clear();
+  erase();
   attron(COLOR_PAIR(COLOR_STATUSSCREEN));
   print_centered_string(str);
   mvaddstr(1,1,VERSION);
@@ -241,7 +241,7 @@ void cons_wait_for_connection() {
   statusmessage("Buffering...");
   pause_until_buffered(aldl);
 
-  clear();
+  erase();
 }
 
 /* --- GAUGES ---------------------------------- */
