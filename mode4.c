@@ -70,7 +70,7 @@ int w_height, w_width; /* width and height of window */
 aldl_conf_t *aldl; /* global pointer to aldl conf struct */
 aldl_record_t *rec; /* current record */
 
-byte mfb[15]; /* mode four string buffer */
+byte mfb[16]; /* mode four string buffer */
 int m4_commrev; /* set this bit if m4 comm string was revised */
 
 char *msgbuf; /* a big message buffer used for single log entry */
@@ -104,14 +104,11 @@ void m4_draw_cmd(int xpos, int ypos);
 /* record current snapshot to disk */
 void m4_record_status();
 
-/* return 1 if old is different from new by thresh */
-int check_max_difference(int old, int new, int thresh);
-
 /* m4 comm */
-void m4_init_status();
-void m4_comm_init();
-void m4_comm_cancel();
-void m4_comm_submit();
+void m4_init_status(); /* initialize the 'status' structure */
+void m4_comm_init(); /* init the command array */
+void m4_comm_cancel(); /* fast abort, cancel all command bytes and send */
+void m4_comm_submit(); /* submit command, includes checksum generation */
 
 void m4_comm_spark(int advance, int absolute); /* set spark, absolute=0 delta */
 void m4_comm_afr(byte afr); /* set air fuel ratio, 0=disable */
@@ -122,6 +119,11 @@ void m4_drop_cyl(int cyl); /* drop a cylinder or 0 to enable all, overr.afr */
 
 void *mode4_init(void *aldl_in) {
   aldl = (aldl_conf_t *)aldl_in;
+
+  /* sanity check pcm address to avoid using this with wrong ecm */
+  if(aldl->comm->pcm_address != 0xF4) {
+    error(EFATAL, ERROR_PLUGIN, "MODE4 Special plugin is for EE only.");
+  };
 
   /* allocate main message buffer for log entries */
   msgbuf = malloc(sizeof(char) * MSGBUFSIZE);
@@ -146,7 +148,7 @@ void *mode4_init(void *aldl_in) {
   init_pair(WHITE_ON_BLACK,COLOR_WHITE,COLOR_BLACK);
   init_pair(WHITE_ON_RED,COLOR_WHITE,COLOR_RED);
 
-  /* fetch indexes */
+  /* fetch indexes (saves repeated lookups) */
   p_idx.rpm = get_index_by_name(aldl,"RPM");
   p_idx.idletarget = get_index_by_name(aldl,"IDLESPD");
   p_idx.iacsteps = get_index_by_name(aldl,"IAC");
@@ -161,7 +163,7 @@ void *mode4_init(void *aldl_in) {
   /* wait for connection */
   m4_cons_wait_for_connection();
 
-  /* prepare null mode4 command */
+  /* prepare 'empty' mode4 command */
   m4_comm_init();
 
   while(1) {
@@ -178,11 +180,6 @@ void *mode4_init(void *aldl_in) {
 
     erase(); /* clear screen --------- */
 
-    #ifdef M4_PRINT_HEX
-    /* print the m4 string in hex for debug */
-    m4_draw_cmd(1,1);
-    #endif
-
     mvprintw(0,1,M4_USE_STRING); /* print usage */
 
     /* print eng status */
@@ -190,7 +187,15 @@ void *mode4_init(void *aldl_in) {
 
     m4_commrev = 0; /* reset revision bit.  input handler may set it */
     m4_consoleif_handle_input(); /* get keyboard input and branch */
-    if(m4_commrev == 1) m4_comm_submit(); /* send command if revised */
+ 
+    #ifdef M4_PRINT_HEX
+    /* print the m4 string in hex for debug */
+    m4_draw_cmd(1,1);
+    #endif
+
+    if(m4_commrev == 1) { /* send command if revised */
+      m4_comm_submit();
+    }
 
     refresh();
     usleep(500);
@@ -292,7 +297,7 @@ void m4_cons_wait_for_connection() {
 void m4_draw_cmd(int xpos, int ypos) {
   move(ypos,xpos); 
   int x;
-  for(x=0;x<15;x++) printw("%X ",(unsigned int)mfb[x]);
+  for(x=0;x<16;x++) printw("%X ",(unsigned int)mfb[x]);
 }
 #endif
 
@@ -319,15 +324,17 @@ void m4_consoleif_handle_input() {
            m4_status.rpm = engine_status.idletarget;
         };
         m4_comm_idle(m4_status.rpm - 25,1);
+        m4_commrev = 1;
       break;
       case 's': /* idle up */
         if(m4_status.rpm == 0) { /* init from current idle */
            m4_status.rpm = engine_status.idletarget;
         };
         m4_comm_idle(m4_status.rpm + 25,1);
+        m4_commrev = 1;
       break;
-      case '0': /* cyl cut */
-      case '1':
+      case '0': /* cyl cut disable */
+      case '1': /* cyl cut 1, etc */
       case '2':
       case '3':
       case '4':
@@ -336,6 +343,7 @@ void m4_consoleif_handle_input() {
       case '7':
       case '8':
         m4_drop_cyl(c - '0');
+        m4_commrev = 1;
       break;
       case ' ': /* reset */
         m4_comm_init();
@@ -356,9 +364,9 @@ void m4_comm_spark(int advance, int absolute) {
     mfb[14] = 0; /* clear adv */
     m4_status.sparkabs = 0;
     m4_status.sparkdelta = 0;
-  } else {
 
-    setbit(mfb[13],0); /* enable spark control */
+  } else { /* enable advance */
+    setbit(mfb[13],0); /* set spark control enable bit */
 
     /* WARNING absolute mode is kinda fucking dangerous, dont use it */
     if(absolute == 1) { /* configure for absolute spark */
@@ -402,7 +410,7 @@ void m4_comm_idle(int rpm, int mode) {
 }
 
 void m4_drop_cyl(int cyl) {
-  if(cyl == 0) {
+  if(cyl == 0) { /* cyl 0 = disable */
     clrbit(mfb[9],7); /* disable cut */
     mfb[12] = 0x00; /* disable cyl */
     m4_status.cyl = 0;
@@ -427,23 +435,24 @@ void m4_comm_afr(byte afr) {
 }
 
 void m4_comm_init() {
-  /* zero */
+  /* zero entire string */
   int x;
-  for(x=3;x<15;x++) mfb[x] = 0x00;
+  for(x=3;x<16;x++) mfb[x] = 0x00;
   /* add prefix */
-  mfb[0] = 0xF4;
-  mfb[1] = 0x62;
-  mfb[2] = 0x04;
-  m4_init_status();
+  mfb[0] = 0xF4; /* ecm address */
+  mfb[1] = 0x62; /* message length */
+  mfb[2] = 0x04; /* mode byte */
+  m4_init_status(); /* reset status to match */
 }
 
 void m4_comm_cancel() {
-  m4_comm_init();
-  m4_comm_submit();
+  m4_comm_init(); /* blank out the command */
+  m4_comm_submit(); /* re-send */
 }
 
 void m4_comm_submit() {
-  aldl_add_command(mfb, 15, 15);
+  mfb[15] = checksum_generate(mfb,15); /* gen checksum @ last byte */
+  aldl_add_command(mfb, 16, 16); /* queue command, the acq thread sends it */
 }
 
 void m4_init_status() {
@@ -455,15 +464,14 @@ void m4_init_status() {
 }
 
 void m4_record_status() {
+  /* open file */
   FILE *fdesc = fopen("/var/log/aldl/MODE4_LOG","a");
   if(fdesc == NULL) error(1,ERROR_PLUGIN,"cant open mode4 snapfile !");
 
+  /* write engine status */
   fwrite(print_engine_status(),strlen(msgbuf),1,fdesc);
   
+  /* close file */
   fclose(fdesc);
 }
 
-int check_max_difference(int old, int new, int thresh) {
-  if(old - new > thresh || new - old > thresh) return 1;
-  return 0;
-}
