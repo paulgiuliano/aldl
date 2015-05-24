@@ -87,6 +87,7 @@ typedef struct _anl_conf_t {
   /* column identifiers */ 
   int col_timestamp, col_rpm, col_temp, col_lblm, col_rblm, col_cell;
   int col_map, col_maf, col_cl, col_blm, col_wot, col_knock, col_wb;
+  int col_spk;
 } anl_conf_t;
 anl_conf_t *anl_conf;
 
@@ -118,7 +119,6 @@ void post_calc();
 
 void print_results();
 void print_results_blm();
-void print_results_knock();
 void print_results_afr();
 
 int rpm_cell_offset(int value);
@@ -144,9 +144,8 @@ int main(int argc, char **argv) {
   if(argc < 2) error("No files specified...");
   int x;
   char *log;
-  printf("Loading files...\n");
   for(x=1;x<argc;x++) {
-    printf("Loading file %s: ",argv[x]);
+    printf("Loading file %s\n",argv[x]);
     log = rf_loadfile(argv[x]);
     if(log == NULL) {
       printf("Couldn't load file, skipping.\n");
@@ -210,13 +209,11 @@ void prep_anl() {
 }
 
 void parse_file(char *data) {
-  printf("Parsing data... ");
   char *line = line_start(data,1); /* initial line pointer */
   while(line != NULL) { /* loop for all lines */
     parse_line(line);
     line = line_start(line,1);
   }
-  printf("Done.\n");
 }
 
 void parse_line(char *line) {
@@ -236,7 +233,6 @@ void print_results() {
 
   /* BRANCHING TO RESULT PARSERS HERE ----------*/
   if(anl_conf->blm_on == 1) print_results_blm();
-  if(anl_conf->knock_on == 1) print_results_knock();
   print_results_afr();
 }
 
@@ -246,21 +242,22 @@ void post_calc() {
   post_calc_afr();
 }
 
-/******** KNOCK COUNT GRID ANALYZER **************************/
+/******** KNOCK COUNT EVENT LOGGER **************************/
 
 void log_knock(char *line) {
   /* check timestamp minimum */
-  if(csvint(line,anl_conf->col_timestamp) < anl_conf->valid_min_time) {
-    anl_knock->last = csvint(line,anl_conf->col_knock); /* keep-alive */
+  if(( csvint(line,anl_conf->col_timestamp) < anl_conf->valid_min_time ) || \
+       ( csvint(line,anl_conf->col_rpm) < MIN_RPM)) {
+    /* the following line acts as a keep-alive, setting initial knock based on
+       the valid_min_time, or when engine stopped.  simply take the current
+       knock count as 'last'. */
+    anl_knock->last = csvint(line,anl_conf->col_knock);
     return;
   }
 
-  /* get knock count */
-  int knock = csvint(line,anl_conf->col_knock);
-  int knock_amount = knock - anl_knock->last;
-
-  /* same knock count as last time */
-  if(knock_amount == 0) return;
+  int knock = csvint(line,anl_conf->col_knock); /* get knock count */
+  if(knock == anl_knock->last) return; /* no change in knock */
+  int knock_amount = knock - anl_knock->last; /* ditch last knock */
 
   /* if rolled counter, or restarting, we dont care which */
   /* (this does mean we're throwing away knock counts on rollover) */
@@ -269,54 +266,16 @@ void log_knock(char *line) {
     return;
   }
 
-  /* at this point, there's a knock event. */
-
   /* discard statistically insignifigant events */
-  if(knock_amount < anl_conf->min_knock) {
-    anl_knock->discarded++;
-    anl_knock->last = knock; /* reset and continue */
-  }
+  if(knock_amount < anl_conf->min_knock) anl_knock->last = knock;
 
-  /* find correct cell */
-  int rpmcell = rpm_cell_offset(csvfloat(line,anl_conf->col_rpm));
-  int mapcell = map_cell_offset(csvfloat(line,anl_conf->col_map));
-
-  /* incr by 1 */
-  anl_knock->t[rpmcell][mapcell]++;
-
-  anl_knock->total_events++; /* increment total counter */
-  anl_knock->total_counts += knock_amount;
+  printf("KNOCK EVENT: %i COUNTS @ RPM=%i MAP=%i SPK=%i WOT=%i\n",
+           knock_amount, csvint(line,anl_conf->col_rpm),
+           csvint(line,anl_conf->col_map), csvint(line,anl_conf->col_spk),
+           csvint(line,anl_conf->col_wot));
 
   /* reset counter */
   anl_knock->last = knock;
-}
-
-void print_results_knock() {
-  printf("\n**** Knock Increment vs RPM vs MAP ****\n");
-  printf("(Records with count incr. < %i ignored)\n",anl_conf->min_knock);
-
-  printf("(This is a total of RECORDS with knock count, NOT ECM counts\n\n");
-  int maprow = 0;
-  int rpmrow = 0;
-  for(maprow=0;maprow<MAP_GRIDSIZE;maprow++) {
-    printf(" %4i ",maprow * GRID_MAP_INTERVAL);
-  }
-  printf("\n");
-  for(rpmrow=0;rpmrow<RPM_GRIDSIZE;rpmrow++) {
-    printf("%4i\n ",rpmrow * GRID_RPM_INTERVAL);
-    printf("   ");
-    for(maprow=0;maprow<MAP_GRIDSIZE;maprow++) {
-      if(anl_knock->t[rpmrow][maprow] > 0) {
-        printf(" %4i ",anl_knock->t[rpmrow][maprow]);
-      } else {
-        printf(" ---- ");
-      }
-    }
-    printf("\n");
-  }
-  printf("total events: %i  total counts: %lu  discarded: %i\n",
-             anl_knock->total_events + anl_knock->discarded,
-            anl_knock->total_counts, anl_knock->discarded);
 }
 
 /********* BLM CELL ANALYZER ****************************/
@@ -558,13 +517,13 @@ void print_results_afr() {
       printf("  MAF AFGS    AFR\n");
     } else {
       printf("\n**** Narrowband Trim vs MAF AFGS ****\n\n");
-      printf("  MAF AFGS    TRIM    MULT\n");
+      printf("  MAF AFGS    TRIM    MULT    COUNT\n");
     }
     for(mafrow=0;mafrow<MAF_GRIDSIZE;mafrow++) {
       printf(" %3i - %3i ",mafrow * GRID_MAF_INTERVAL,
           GRID_MAF_INTERVAL * (mafrow +1));
       if(anl_afrmaf->t[mafrow].count <= anl_conf->afr_counts) {
-        printf("   ----   -----");
+        printf("   ----   -----    %i", anl_afrmaf->t[mafrow].count);
       } else {
         if(wb == 1) {
           printf("   %3.1f",anl_afrmaf->t[mafrow].avg);
@@ -574,6 +533,7 @@ void print_results_afr() {
         if(anl_conf->wb_on == 0) { /* print percentage */
           printf("   %1.3f",anl_afrmaf->t[mafrow].avg / 128);
         }
+        printf("    %i", anl_afrmaf->t[mafrow].count);
       }
       printf("\n");
     }
@@ -654,6 +614,7 @@ void anl_reset_columns(char *log) {
   anl_conf->col_rblm = anl_get_col("COL_RBLM",log);
   if(anl_conf->knock_on == 1) {
     anl_conf->col_knock = anl_get_col("COL_KNOCK",log);
+    anl_conf->col_spk = anl_get_col("COL_SPK",log);
   }
   if(anl_conf->wb_on == 1) {
     anl_conf->col_wb = anl_get_col("COL_WB",log);

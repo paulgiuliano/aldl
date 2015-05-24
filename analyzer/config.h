@@ -12,4 +12,6 @@
 /* reject blm cell 17, so decel events dont fuck up results */
 #define REJECTDECEL
 
-#define MIN_RPM 200
+/* if rpm is below this, engine is considered not running */
+#define MIN_RPM 500
+
