@@ -87,7 +87,7 @@ typedef struct _anl_conf_t {
   /* column identifiers */ 
   int col_timestamp, col_rpm, col_temp, col_lblm, col_rblm, col_cell;
   int col_map, col_maf, col_cl, col_blm, col_wot, col_knock, col_wb;
-  int col_spk;
+  int col_spk, col_lo2, col_ro2;
 } anl_conf_t;
 anl_conf_t *anl_conf;
 
@@ -201,11 +201,9 @@ void prep_anl() {
     memset(anl_afrmaf,0,sizeof(anl_maf_t));
   }
 
-  /* config wideband pe afr struct */
-  if(anl_conf->wb_on == 1) {
-    anl_wbwot = malloc(sizeof(anl_wbwot_t));
-    memset(anl_wbwot,0,sizeof(anl_wbwot_t));
-  }
+  /* config pe afr struct */
+  anl_wbwot = malloc(sizeof(anl_wbwot_t));
+  memset(anl_wbwot,0,sizeof(anl_wbwot_t));
 }
 
 void parse_file(char *data) {
@@ -440,9 +438,15 @@ void log_afr(char *line) {
       anl_afrmaf->t[mafcell].avg += afr;
       anl_afrmaf->t[mafcell].count++;
     }
-  } else if(wb == 1) { /* analyze wot record */
+  } else if(wb == 1) { /* analyze wot record  with wideband */
     int rpmcell = rpm_cell_offset(csvfloat(line,anl_conf->col_rpm));
     anl_wbwot->t[rpmcell].avg += afr;
+    anl_wbwot->t[rpmcell].count++;
+  } else { /* analyze wot record with narrowband mv */
+    int rpmcell = rpm_cell_offset(csvfloat(line,anl_conf->col_rpm));
+    double o2avg = (float)(csvint(line,anl_conf->col_lo2) + 
+                        csvint(line,anl_conf->col_ro2)) / 2;
+    anl_wbwot->t[rpmcell].avg += o2avg;
     anl_wbwot->t[rpmcell].count++;
   }
 }
@@ -459,10 +463,8 @@ void post_calc_afr() {
       }
     }
     /* embed wot in this loop */
-    if(anl_conf->wb_on == 1) {
-      anl_wbwot->t[rpmrow].avg = anl_wbwot->t[rpmrow].avg / 
+    anl_wbwot->t[rpmrow].avg = anl_wbwot->t[rpmrow].avg /
                                 anl_wbwot->t[rpmrow].count;
-    }
   }
   if(anl_conf->sd_enable == 0) {
     for(mafrow=0;mafrow<MAF_GRIDSIZE;mafrow++) {
@@ -550,6 +552,17 @@ void print_results_afr() {
       printf("   %4.1f    %i Counts\n",
             anl_wbwot->t[rpmrow].avg, anl_wbwot->t[rpmrow].count);
     }
+  } else {
+    printf("\n**** Narrowband MV (Average) vs RPM during PE ACTIVE ****\n\n");
+    for(rpmrow=0;rpmrow<RPM_GRIDSIZE;rpmrow++) {
+      if(anl_wbwot->t[rpmrow].count == 0) {
+         anl_wbwot->t[rpmrow].avg = 0;
+      }
+      printf("RPM %4i - %4i    ",rpmrow * GRID_RPM_INTERVAL,
+          GRID_RPM_INTERVAL * (rpmrow +1));
+      printf("   %4.1f    %i Counts\n",
+            anl_wbwot->t[rpmrow].avg, anl_wbwot->t[rpmrow].count);
+    }
   }
 }
 
@@ -618,6 +631,9 @@ void anl_reset_columns(char *log) {
   }
   if(anl_conf->wb_on == 1) {
     anl_conf->col_wb = anl_get_col("COL_WB",log);
+  } else {
+    anl_conf->col_ro2 = anl_get_col("COL_RO2",log);
+    anl_conf->col_lo2 = anl_get_col("COL_LO2",log);
   }
   anl_conf->col_timestamp = anl_get_col("COL_TIMESTAMP",log);
   anl_conf->col_rpm = anl_get_col("COL_RPM",log);
