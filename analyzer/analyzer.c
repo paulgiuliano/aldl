@@ -418,9 +418,18 @@ void log_afr(char *line) {
     if(afr < anl_conf->wb_min || afr > anl_conf->wb_max) return;
   } else { /* use narrowband */
     if(csvint(line,anl_conf->col_cl) == 0) return; /* reject non-cl */
-    /* avg of left and right blm */
-    afr = ((csvfloat(line,anl_conf->col_lblm) +
-            csvfloat(line,anl_conf->col_rblm)) / 2);
+    if(anl_conf->use_int == 1) { /* integrator mode */
+      float integ = (csvfloat(line,anl_conf->col_lint) +
+           csvfloat(line,anl_conf->col_rint)) / 2;
+      afr = (csvfloat(line,anl_conf->col_lblm) +
+          csvfloat(line,anl_conf->col_rblm)) / 2;
+      /* use an average of one integrator against many blms as a weight */
+      afr = ( ( afr * anl_conf->blm_weight ) + integ )
+                / ( anl_conf->blm_weight + 1 ) ;
+    } else { /* non-integrator mode */
+      afr = (csvfloat(line,anl_conf->col_lblm) +
+             csvfloat(line,anl_conf->col_rblm)) / 2;
+    }
   }
   
   if(csvint(line,anl_conf->col_wot) == 0) { /* analyze non-pe records */
