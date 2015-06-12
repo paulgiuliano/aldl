@@ -75,11 +75,12 @@ typedef struct _anl_conf_t {
   int blm_on; /* activate the blm analyzer */
   int blm_n_cells; /* number of blm cells */
   int blm_min_count; /* minimum number of counts for a valid cell */
+  int use_int; /* use integrator */
+  int blm_weight; /* weight of blm in calc against int */
   /* knock analyzer */
   int knock_on; /* activate knock counter */
   int min_knock;
   /* afr mode */
-  int sd_enable; /* enable speed density */
   int afr_counts; /* min counts for valid afrcell */
   /* wb analyzer */
   int wb_on; /* use wideband instead of narrowband */
@@ -88,6 +89,7 @@ typedef struct _anl_conf_t {
   int col_timestamp, col_rpm, col_temp, col_lblm, col_rblm, col_cell;
   int col_map, col_maf, col_cl, col_blm, col_wot, col_knock, col_wb;
   int col_spk, col_lo2, col_ro2;
+  int col_lint, col_rint;
 } anl_conf_t;
 anl_conf_t *anl_conf;
 
@@ -193,13 +195,11 @@ void prep_anl() {
   }
 
   /* config afr struct */
-  if(anl_conf->sd_enable == 1) {
-    anl_afrve = malloc(sizeof(anl_ve_t));
-    memset(anl_afrve,0,sizeof(anl_ve_t));
-  } else {
-    anl_afrmaf = malloc(sizeof(anl_maf_t));
-    memset(anl_afrmaf,0,sizeof(anl_maf_t));
-  }
+  anl_afrve = malloc(sizeof(anl_ve_t));
+  memset(anl_afrve,0,sizeof(anl_ve_t));
+
+  anl_afrmaf = malloc(sizeof(anl_maf_t));
+  memset(anl_afrmaf,0,sizeof(anl_maf_t));
 
   /* config pe afr struct */
   anl_wbwot = malloc(sizeof(anl_wbwot_t));
@@ -305,9 +305,21 @@ void log_blm(char *line) {
   /* update counts */
   cdata->counts++;
 
+  float blm = 0;
+
   /* update blm */
-  float blm = (csvfloat(line,anl_conf->col_lblm) +
+  if(anl_conf->use_int == 1) { /* integrator mode */
+    float integ = (csvfloat(line,anl_conf->col_lint) +
+         csvfloat(line,anl_conf->col_rint)) / 2;
+    blm = (csvfloat(line,anl_conf->col_lblm) +
+        csvfloat(line,anl_conf->col_rblm)) / 2;
+    /* use an average of one integrator against many blms as a weight */
+    blm = ( ( blm * anl_conf->blm_weight ) + integ )
+              / ( anl_conf->blm_weight + 1 ) ;
+  } else { /* non-integrator mode */
+    blm = (csvfloat(line,anl_conf->col_lblm) +
              csvfloat(line,anl_conf->col_rblm)) / 2;
+  }
   cdata->blm.avg += blm; /* will div for avg later */
   if(blm < cdata->blm.low) cdata->blm.low = blm;
   if(blm > cdata->blm.high) cdata->blm.high = blm;
@@ -394,7 +406,6 @@ void log_afr(char *line) {
   
   /* shortcuts */
   int wb = anl_conf->wb_on;
-  int sd = anl_conf->sd_enable;
 
   /* global thresholds */
   if(csvfloat(line,anl_conf->col_temp) < anl_conf->valid_min_temp) return;
@@ -425,19 +436,18 @@ void log_afr(char *line) {
     if(csvint(line,anl_conf->col_cell) == 17) return;
     #endif
 
-    if(sd == 1) {
-      /* ve analysis */
-      int rpmcell = rpm_cell_offset(csvfloat(line,anl_conf->col_rpm));
-      int mapcell = map_cell_offset(csvfloat(line,anl_conf->col_map));
-      anl_afrve->t[rpmcell][mapcell].avg += afr;
-      anl_afrve->t[rpmcell][mapcell].count++;
-    } else {
-      /* maf analysis */
-      float maf = csvfloat(line,anl_conf->col_maf);
-      int mafcell = maf_cell_offset(maf);
-      anl_afrmaf->t[mafcell].avg += afr;
-      anl_afrmaf->t[mafcell].count++;
-    }
+    /* ve analysis */
+    int rpmcell = rpm_cell_offset(csvfloat(line,anl_conf->col_rpm));
+    int mapcell = map_cell_offset(csvfloat(line,anl_conf->col_map));
+    anl_afrve->t[rpmcell][mapcell].avg += afr;
+    anl_afrve->t[rpmcell][mapcell].count++;
+
+    /* maf analysis */
+    float maf = csvfloat(line,anl_conf->col_maf);
+    int mafcell = maf_cell_offset(maf);
+    anl_afrmaf->t[mafcell].avg += afr;
+    anl_afrmaf->t[mafcell].count++;
+
   } else if(wb == 1) { /* analyze wot record  with wideband */
     int rpmcell = rpm_cell_offset(csvfloat(line,anl_conf->col_rpm));
     anl_wbwot->t[rpmcell].avg += afr;
@@ -457,20 +467,16 @@ void post_calc_afr() {
   int mafrow = 0;
   for(rpmrow=0;rpmrow<RPM_GRIDSIZE;rpmrow++) {
     for(maprow=0;maprow<MAP_GRIDSIZE;maprow++) {
-      if(anl_conf->sd_enable == 1) {
         anl_afrve->t[rpmrow][maprow].avg = anl_afrve->t[rpmrow][maprow].avg /
                           anl_afrve->t[rpmrow][maprow].count;
-      }
     }
     /* embed wot in this loop */
     anl_wbwot->t[rpmrow].avg = anl_wbwot->t[rpmrow].avg /
                                 anl_wbwot->t[rpmrow].count;
   }
-  if(anl_conf->sd_enable == 0) {
-    for(mafrow=0;mafrow<MAF_GRIDSIZE;mafrow++) {
+  for(mafrow=0;mafrow<MAF_GRIDSIZE;mafrow++) {
       anl_afrmaf->t[mafrow].avg = anl_afrmaf->t[mafrow].avg /
                          anl_afrmaf->t[mafrow].count;
-    }
   }
 }
 
@@ -481,64 +487,61 @@ void print_results_afr() {
 
   int wb = anl_conf->wb_on; /* shortcut */ 
 
-  if(anl_conf->sd_enable == 1) {
-    if(wb == 1) {
-      printf("\n**** Wideband AFR AVERAGE vs RPM vs MAP ****\n");
-    } else {
-      printf("\n**** Narrowband Trim vs RPM vs MAP ****\n");  
-    }
-    printf("(Igoring cells with counts < %i)\n",anl_conf->afr_counts);
-    if(wb == 1) {
-      printf("(Ignoring wideband AFR < %f and > %f)\n",
-               anl_conf->wb_min,anl_conf->wb_max);
-      printf("(Adding compensation of %f)\n\n",anl_conf->wb_comp);
-    }
-    for(maprow=0;maprow<MAP_GRIDSIZE;maprow++) {
-      printf(" %4i ",maprow * GRID_MAP_INTERVAL);
-    }
-    printf("\n");
-    for(rpmrow=0;rpmrow<RPM_GRIDSIZE;rpmrow++) {
-      printf("%4i\n ",rpmrow * GRID_RPM_INTERVAL);
-      printf("   ");
-      for(maprow=0;maprow<MAP_GRIDSIZE;maprow++) {
-        if(anl_afrve->t[rpmrow][maprow].count <= anl_conf->afr_counts) {
-          printf(" .... ");
-        } else {
-          if(wb == 1) {
-            printf(" %4.1f ",anl_afrve->t[rpmrow][maprow].avg);
-          } else {
-            printf(" %4.0f ",anl_afrve->t[rpmrow][maprow].avg);  
-          }
-        }
-      }
-      printf("\n");
-    }
+  if(wb == 1) {
+    printf("\n**** Wideband AFR AVERAGE vs RPM vs MAP ****\n");
   } else {
-    if(wb == 1) {
-      printf("\n**** Wideband AFR AVERAGE vs MAF AFGS ****\n\n");
-      printf("  MAF AFGS    AFR\n");
-    } else {
-      printf("\n**** Narrowband Trim vs MAF AFGS ****\n\n");
-      printf("  MAF AFGS    TRIM    MULT    COUNT\n");
-    }
-    for(mafrow=0;mafrow<MAF_GRIDSIZE;mafrow++) {
-      printf(" %3i - %3i ",mafrow * GRID_MAF_INTERVAL,
-          GRID_MAF_INTERVAL * (mafrow +1));
-      if(anl_afrmaf->t[mafrow].count <= anl_conf->afr_counts) {
-        printf("   ----   -----    %i", anl_afrmaf->t[mafrow].count);
+    printf("\n**** Narrowband Trim vs RPM vs MAP ****\n");  
+  }
+  printf("(Igoring cells with counts < %i)\n",anl_conf->afr_counts);
+  if(wb == 1) {
+    printf("(Ignoring wideband AFR < %f and > %f)\n",
+             anl_conf->wb_min,anl_conf->wb_max);
+    printf("(Adding compensation of %f)\n\n",anl_conf->wb_comp);
+  }
+  for(maprow=0;maprow<MAP_GRIDSIZE;maprow++) {
+    printf(" %4i ",maprow * GRID_MAP_INTERVAL);
+  }
+  printf("\n");
+  for(rpmrow=0;rpmrow<RPM_GRIDSIZE;rpmrow++) {
+    printf("%4i\n ",rpmrow * GRID_RPM_INTERVAL);
+    printf("   ");
+    for(maprow=0;maprow<MAP_GRIDSIZE;maprow++) {
+      if(anl_afrve->t[rpmrow][maprow].count <= anl_conf->afr_counts) {
+        printf(" .... ");
       } else {
         if(wb == 1) {
-          printf("   %3.1f",anl_afrmaf->t[mafrow].avg);
+          printf(" %4.1f ",anl_afrve->t[rpmrow][maprow].avg);
         } else {
-          printf("   %4.0f",anl_afrmaf->t[mafrow].avg);
+          printf(" %4.0f ",anl_afrve->t[rpmrow][maprow].avg);  
         }
-        if(anl_conf->wb_on == 0) { /* print percentage */
-          printf("   %1.3f",anl_afrmaf->t[mafrow].avg / 128);
-        }
-        printf("    %i", anl_afrmaf->t[mafrow].count);
       }
-      printf("\n");
     }
+    printf("\n");
+  }
+  if(wb == 1) {
+    printf("\n**** Wideband AFR AVERAGE vs MAF AFGS ****\n\n");
+    printf("  MAF AFGS    AFR\n");
+  } else {
+    printf("\n**** Narrowband Trim vs MAF AFGS ****\n\n");
+    printf("  MAF AFGS    TRIM    MULT    COUNT\n");
+  }
+  for(mafrow=0;mafrow<MAF_GRIDSIZE;mafrow++) {
+    printf(" %3i - %3i ",mafrow * GRID_MAF_INTERVAL,
+        GRID_MAF_INTERVAL * (mafrow +1));
+    if(anl_afrmaf->t[mafrow].count <= anl_conf->afr_counts) {
+      printf("   ----   -----    %i", anl_afrmaf->t[mafrow].count);
+    } else {
+      if(wb == 1) {
+        printf("   %3.1f",anl_afrmaf->t[mafrow].avg);
+      } else {
+        printf("   %4.0f",anl_afrmaf->t[mafrow].avg);
+      }
+      if(anl_conf->wb_on == 0) { /* print percentage */
+        printf("   %1.3f",anl_afrmaf->t[mafrow].avg / 128);
+     }
+      printf("    %i", anl_afrmaf->t[mafrow].count);
+    }
+    printf("\n");
   }
 
   if(wb == 1) {
@@ -625,6 +628,10 @@ void anl_reset_columns(char *log) {
   anl_conf->col_lblm = anl_get_col("COL_LBLM",log);
   anl_conf->col_cell = anl_get_col("COL_CELL",log);
   anl_conf->col_rblm = anl_get_col("COL_RBLM",log);
+  if(anl_conf->use_int == 1) {
+    anl_conf->col_lint = anl_get_col("COL_LINT",log);
+    anl_conf->col_rint = anl_get_col("COL_RINT",log); 
+  }
   if(anl_conf->knock_on == 1) {
     anl_conf->col_knock = anl_get_col("COL_KNOCK",log);
     anl_conf->col_spk = anl_get_col("COL_SPK",log);
@@ -652,16 +659,20 @@ void anl_load_conf(char *filename) {
   anl_conf->valid_min_time = configopt_int_fatal(dconf,"MIN_TIME",0,999999);
   anl_conf->valid_min_temp  = configopt_int_fatal(dconf,"MIN_TEMP",-20,99999);
   anl_conf->blm_on = configopt_int_fatal(dconf,"BLM_ON",0,1);
+  anl_conf->use_int = configopt_int_fatal(dconf,"USE_INT",0,1);
   anl_conf->knock_on = configopt_int_fatal(dconf,"KNOCK_ON",0,1);
   if(anl_conf->blm_on == 1) {
     anl_conf->blm_n_cells = configopt_int_fatal(dconf,"N_CELLS",1,255);
     anl_conf->blm_min_count = configopt_int_fatal(dconf,"BLM_MIN_COUNTS",
                                   1,10000);
+    anl_conf->use_int = configopt_int_fatal(dconf,"USE_INT",0,1);
+    if(anl_conf->use_int == 1) {
+      anl_conf->blm_weight = configopt_int_fatal(dconf,"BLM_WEIGHT",1,100);
+    }
   }
   if(anl_conf->knock_on == 1) {
     anl_conf->min_knock = configopt_int_fatal(dconf,"KNOCK_MIN",1,65535);
   }
-  anl_conf->sd_enable = configopt_int(dconf,"SD_ENABLE",0,1,0);
   anl_conf->wb_on = configopt_int_fatal(dconf,"WB_ON",0,1);
   anl_conf->afr_counts = configopt_int_fatal(dconf,"AFR_MIN_COUNTS",1,65535);
   if(anl_conf->wb_on == 1) {
