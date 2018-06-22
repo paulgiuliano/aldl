@@ -79,8 +79,8 @@
 #define SLEEPYTIME 200
 
 /* a theoretical maximum multiplier per byte that the ECM may take to generate
-   data under any circumstance ... */
-#define ECMLAGTIME 0.35
+   data under any circumstance ... WAS 0.35 */
+#define ECMLAGTIME 0.95
 
 /* a constant theoretical amount of bytes per millisecond that can be
    moved at the baud rate; generally 1 / baud * 1000 */
