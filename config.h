@@ -80,11 +80,11 @@
 
 /* a theoretical maximum multiplier per byte that the ECM may take to generate
    data under any circumstance ... WAS 0.35 */
-#define ECMLAGTIME 0.95
+#define ECMLAGTIME 0.99
 
 /* a constant theoretical amount of bytes per millisecond that can be
    moved at the baud rate; generally 1 / baud * 1000 */
-#define SERIAL_BYTES_PER_MS 0.98
+#define SERIAL_BYTES_PER_MS 0.99
 
 /* defining this provides a linear decrease in the frequency of reconnect
    attempts.  this is for 'always-on' dashboard systems that might just sit
